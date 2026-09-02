@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
+  BadgeCheck,
   Camera,
   ChevronRight,
   HelpCircle,
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-profile";
+import { useKyc, kycStatusLabel } from "@/hooks/use-kyc";
 import { BottomNav } from "@/components/bottom-nav";
 
 export const Route = createFileRoute("/perfil/")({
@@ -38,6 +40,7 @@ function formatPhone(phone: string | undefined): string {
 function PerfilPage() {
   const navigate = useNavigate();
   const { profile, loading, notAuthenticated, uploadAvatar } = useProfile();
+  const { kyc } = useKyc();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -144,6 +147,12 @@ function PerfilPage() {
 
           <section className="overflow-hidden rounded-3xl bg-card shadow-xl shadow-navy-900/10">
             <MenuLink
+              to="/perfil/kyc"
+              icon={BadgeCheck}
+              label="KYC Basic"
+              badge={kycBadge(kyc?.status)}
+            />
+            <MenuLink
               to="/perfil/configuracoes"
               icon={Settings}
               label="Editar perfil e configurações"
@@ -168,7 +177,39 @@ function PerfilPage() {
   );
 }
 
-function MenuLink({ to, icon: Icon, label }: { to: string; icon: LucideIcon; label: string }) {
+type MenuBadge = { text: string; tone: "green" | "amber" | "red" | "muted" };
+
+const BADGE_TONE_CLASSES: Record<MenuBadge["tone"], string> = {
+  green: "bg-brand-green/15 text-brand-green-dark",
+  amber: "bg-amber-500/15 text-amber-600",
+  red: "bg-destructive/15 text-destructive",
+  muted: "bg-secondary text-muted-foreground",
+};
+
+function kycBadge(status: string | undefined): MenuBadge {
+  switch (status) {
+    case "verified":
+      return { text: kycStatusLabel("verified"), tone: "green" };
+    case "pending":
+      return { text: kycStatusLabel("pending"), tone: "amber" };
+    case "rejected":
+      return { text: kycStatusLabel("rejected"), tone: "red" };
+    default:
+      return { text: kycStatusLabel("not_started"), tone: "muted" };
+  }
+}
+
+function MenuLink({
+  to,
+  icon: Icon,
+  label,
+  badge,
+}: {
+  to: string;
+  icon: LucideIcon;
+  label: string;
+  badge?: MenuBadge;
+}) {
   return (
     <Link
       to={to}
@@ -178,6 +219,13 @@ function MenuLink({ to, icon: Icon, label }: { to: string; icon: LucideIcon; lab
         <Icon className="h-4.5 w-4.5" aria-hidden="true" />
       </span>
       <span className="flex-1">{label}</span>
+      {badge && (
+        <span
+          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${BADGE_TONE_CLASSES[badge.tone]}`}
+        >
+          {badge.text}
+        </span>
+      )}
       <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
     </Link>
   );

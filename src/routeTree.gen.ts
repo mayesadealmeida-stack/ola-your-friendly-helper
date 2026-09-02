@@ -15,6 +15,7 @@ import { Route as HomeRouteImport } from './routes/home'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as PerfilIndexRouteImport } from './routes/perfil.index'
 import { Route as PerfilConfiguracoesRouteImport } from './routes/perfil.configuracoes'
+import { Route as PerfilKycRouteImport } from './routes/perfil.kyc'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -46,6 +47,11 @@ const PerfilConfiguracoesRoute = PerfilConfiguracoesRouteImport.update({
   path: '/configuracoes',
   getParentRoute: () => PerfilRoute,
 } as any)
+const PerfilKycRoute = PerfilKycRouteImport.update({
+  id: '/kyc',
+  path: '/kyc',
+  getParentRoute: () => PerfilRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/home': typeof HomeRoute
   '/perfil': typeof PerfilRouteWithChildren
   '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
+  '/perfil/kyc': typeof PerfilKycRoute
   '/perfil/': typeof PerfilIndexRoute
 }
 export interface FileRoutesByTo {
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/assistente': typeof AssistenteRoute
   '/home': typeof HomeRoute
   '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
+  '/perfil/kyc': typeof PerfilKycRoute
   '/perfil': typeof PerfilIndexRoute
 }
 export interface FileRoutesById {
@@ -69,6 +77,7 @@ export interface FileRoutesById {
   '/home': typeof HomeRoute
   '/perfil': typeof PerfilRouteWithChildren
   '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
+  '/perfil/kyc': typeof PerfilKycRoute
   '/perfil/': typeof PerfilIndexRoute
 }
 export interface FileRouteTypes {
@@ -79,9 +88,16 @@ export interface FileRouteTypes {
     | '/home'
     | '/perfil'
     | '/perfil/configuracoes'
+    | '/perfil/kyc'
     | '/perfil/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/assistente' | '/home' | '/perfil/configuracoes' | '/perfil'
+  to:
+    | '/'
+    | '/assistente'
+    | '/home'
+    | '/perfil/configuracoes'
+    | '/perfil/kyc'
+    | '/perfil'
   id:
     | '__root__'
     | '/'
@@ -89,6 +105,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/perfil'
     | '/perfil/configuracoes'
+    | '/perfil/kyc'
     | '/perfil/'
   fileRoutesById: FileRoutesById
 }
@@ -143,16 +160,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PerfilConfiguracoesRouteImport
       parentRoute: typeof PerfilRoute
     }
+    '/perfil/kyc': {
+      id: '/perfil/kyc'
+      path: '/kyc'
+      fullPath: '/perfil/kyc'
+      preLoaderRoute: typeof PerfilKycRouteImport
+      parentRoute: typeof PerfilRoute
+    }
   }
 }
 
 interface PerfilRouteChildren {
   PerfilConfiguracoesRoute: typeof PerfilConfiguracoesRoute
+  PerfilKycRoute: typeof PerfilKycRoute
   PerfilIndexRoute: typeof PerfilIndexRoute
 }
 
 const PerfilRouteChildren: PerfilRouteChildren = {
   PerfilConfiguracoesRoute: PerfilConfiguracoesRoute,
+  PerfilKycRoute: PerfilKycRoute,
   PerfilIndexRoute: PerfilIndexRoute,
 }
 

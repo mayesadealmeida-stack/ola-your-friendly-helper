@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      kyc_basic: {
+        Row: {
+          address: string
+          address_reference: string
+          birth_date: string | null
+          city: string
+          country: string
+          created_at: string
+          full_name: string
+          id: string
+          status: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string
+          address_reference?: string
+          birth_date?: string | null
+          city?: string
+          country?: string
+          created_at?: string
+          full_name?: string
+          id: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          address_reference?: string
+          birth_date?: string | null
+          city?: string
+          country?: string
+          created_at?: string
+          full_name?: string
+          id?: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

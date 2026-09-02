@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import logo from "/logo-group-mobil.webp";
 import { BottomNav } from "@/components/bottom-nav";
+import { UserAvatarLink } from "@/components/user-avatar";
+import { useProfile } from "@/hooks/use-profile";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -52,11 +54,6 @@ function useGreetingPeriod() {
   return { label: "Boa noite", icon: Moon };
 }
 
-function useCurrentUser() {
-  // TODO: ligar à sessão real do Supabase (auth.getUser()).
-  return { name: null as string | null, loading: false };
-}
-
 function useBalance() {
   // TODO: ligar à tabela de saldo real no Supabase.
   return { amountKz: 0, loading: false };
@@ -84,7 +81,8 @@ function useRecentMovements() {
 
 function HomePage() {
   const greeting = useGreetingPeriod();
-  const user = useCurrentUser();
+  const { profile } = useProfile();
+  const userName = profile?.full_name?.trim() || null;
   const balance = useBalance();
   const notifications = useNotifications();
   const recent = useRecentMovements();
@@ -96,7 +94,7 @@ function HomePage() {
         <Header
           greetingLabel={greeting.label}
           greetingIcon={greeting.icon}
-          userName={user.name}
+          userName={userName}
           unreadCount={notifications.unreadCount}
         />
 
@@ -167,9 +165,7 @@ function Header({
               <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-brand-green ring-2 ring-navy-900" />
             )}
           </button>
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-green font-display text-sm font-bold text-primary-foreground">
-            {userName ? userName.charAt(0).toUpperCase() : "?"}
-          </div>
+          <UserAvatarLink size={40} />
         </div>
       </div>
     </header>
