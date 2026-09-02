@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/home")({
@@ -320,9 +320,13 @@ function AssistantCard() {
           Precisa de ajuda? Estamos aqui para ajudar.
         </p>
       </div>
-      <button className="rounded-full bg-brand-green px-4 py-2 text-xs font-semibold text-primary-foreground transition hover:bg-brand-green-dark">
+      <Link
+        to="/assistente"
+        className="rounded-full bg-brand-green px-4 py-2 text-xs font-semibold text-primary-foreground transition hover:bg-brand-green-dark"
+      >
         Conversar
-      </button>
+      </Link>
+
     </section>
   );
 }
