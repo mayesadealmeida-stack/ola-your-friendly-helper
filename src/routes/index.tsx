@@ -3,11 +3,26 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 function normalizePhone(input: string): string {
-  const trimmed = input.replace(/\s+/g, "");
-  if (trimmed.startsWith("+")) return trimmed;
-  if (trimmed.startsWith("244")) return `+${trimmed}`;
-  return `+244${trimmed.replace(/^0+/, "")}`;
+  const digits = input.replace(/\D/g, "");
+  const local = digits.startsWith("244") ? digits.slice(3) : digits.replace(/^0+/, "");
+  return `244${local}`;
 }
+
+// O telefone é convertido num endereço interno estável para a autenticação.
+function phoneToEmail(phone: string): string {
+  return `${normalizePhone(phone)}@groupmobil.app`;
+}
+
+function validate(phone: string, password: string): string | null {
+  const digits = normalizePhone(phone);
+  if (digits.length < 11) return "Número de telefone inválido. Ex.: 900 000 000";
+  if (!/^[A-Za-z0-9]+$/.test(password)) return "A senha deve conter apenas letras e números.";
+  if (password.length < 6) return "A senha deve ter pelo menos 6 caracteres.";
+  if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password))
+    return "A senha deve conter letras e números.";
+  return null;
+}
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -41,23 +56,47 @@ function Index() {
   async function handleSignup(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    setLoading(true);
 
     const form = new FormData(e.currentTarget);
     const fullName = String(form.get("fullName") ?? "").trim();
     const username = String(form.get("username") ?? "").trim();
-    const phone = normalizePhone(String(form.get("phone") ?? "").trim());
+    const rawPhone = String(form.get("phone") ?? "").trim();
     const password = String(form.get("password") ?? "");
 
+    const invalid = validate(rawPhone, password);
+    if (invalid) {
+      setError(invalid);
+      return;
+    }
+
+    setLoading(true);
     const { error: signUpError } = await supabase.auth.signUp({
-      phone,
+      email: phoneToEmail(rawPhone),
       password,
-      options: { data: { full_name: fullName, username } },
+      options: {
+        data: { full_name: fullName, username, phone: normalizePhone(rawPhone) },
+        emailRedirectTo: window.location.origin,
+      },
     });
 
-    setLoading(false);
     if (signUpError) {
-      setError(signUpError.message);
+      setLoading(false);
+      setError(
+        signUpError.message.toLowerCase().includes("already")
+          ? "Este número já tem conta. Faça login."
+          : signUpError.message,
+      );
+      return;
+    }
+
+    // Auto-confirmação está ativa: entra logo após criar a conta.
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: phoneToEmail(rawPhone),
+      password,
+    });
+    setLoading(false);
+    if (signInError) {
+      setError(signInError.message);
       return;
     }
     navigate({ to: "/home" });
@@ -66,21 +105,31 @@ function Index() {
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    setLoading(true);
 
     const form = new FormData(e.currentTarget);
-    const phone = normalizePhone(String(form.get("phone") ?? "").trim());
+    const rawPhone = String(form.get("phone") ?? "").trim();
     const password = String(form.get("password") ?? "");
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({ phone, password });
+    const invalid = validate(rawPhone, password);
+    if (invalid) {
+      setError(invalid);
+      return;
+    }
+
+    setLoading(true);
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: phoneToEmail(rawPhone),
+      password,
+    });
 
     setLoading(false);
     if (signInError) {
-      setError(signInError.message);
+      setError("Telefone ou senha incorretos.");
       return;
     }
     navigate({ to: "/home" });
   }
+
 
   if (view === "landing") {
     return <Landing onSignup={() => setView("signup")} onLogin={() => setView("login")} />;
