@@ -56,23 +56,47 @@ function Index() {
   async function handleSignup(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    setLoading(true);
 
     const form = new FormData(e.currentTarget);
     const fullName = String(form.get("fullName") ?? "").trim();
     const username = String(form.get("username") ?? "").trim();
-    const phone = normalizePhone(String(form.get("phone") ?? "").trim());
+    const rawPhone = String(form.get("phone") ?? "").trim();
     const password = String(form.get("password") ?? "");
 
+    const invalid = validate(rawPhone, password);
+    if (invalid) {
+      setError(invalid);
+      return;
+    }
+
+    setLoading(true);
     const { error: signUpError } = await supabase.auth.signUp({
-      phone,
+      email: phoneToEmail(rawPhone),
       password,
-      options: { data: { full_name: fullName, username } },
+      options: {
+        data: { full_name: fullName, username, phone: normalizePhone(rawPhone) },
+        emailRedirectTo: window.location.origin,
+      },
     });
 
-    setLoading(false);
     if (signUpError) {
-      setError(signUpError.message);
+      setLoading(false);
+      setError(
+        signUpError.message.toLowerCase().includes("already")
+          ? "Este número já tem conta. Faça login."
+          : signUpError.message,
+      );
+      return;
+    }
+
+    // Auto-confirmação está ativa: entra logo após criar a conta.
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: phoneToEmail(rawPhone),
+      password,
+    });
+    setLoading(false);
+    if (signInError) {
+      setError(signInError.message);
       return;
     }
     navigate({ to: "/home" });
@@ -81,21 +105,31 @@ function Index() {
   async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    setLoading(true);
 
     const form = new FormData(e.currentTarget);
-    const phone = normalizePhone(String(form.get("phone") ?? "").trim());
+    const rawPhone = String(form.get("phone") ?? "").trim();
     const password = String(form.get("password") ?? "");
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({ phone, password });
+    const invalid = validate(rawPhone, password);
+    if (invalid) {
+      setError(invalid);
+      return;
+    }
+
+    setLoading(true);
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: phoneToEmail(rawPhone),
+      password,
+    });
 
     setLoading(false);
     if (signInError) {
-      setError(signInError.message);
+      setError("Telefone ou senha incorretos.");
       return;
     }
     navigate({ to: "/home" });
   }
+
 
   if (view === "landing") {
     return <Landing onSignup={() => setView("signup")} onLogin={() => setView("login")} />;
