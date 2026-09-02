@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, Send } from "lucide-react";
 import { askAssistant } from "@/lib/assistant.functions";
 import logo from "/logo-group-mobil.webp";
 
@@ -92,7 +93,7 @@ function AssistantPage() {
             aria-label="Voltar"
             className="flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/15"
           >
-            <span aria-hidden="true">←</span>
+            <ArrowLeft className="h-4.5 w-4.5" strokeWidth={2.25} aria-hidden="true" />
           </Link>
           <img
             src={logo}
@@ -114,10 +115,7 @@ function AssistantPage() {
 
       <main className="mx-auto w-full max-w-md flex-1 space-y-3 px-5 py-5">
         {messages.map((m, i) => (
-          <div
-            key={i}
-            className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
-          >
+          <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
             <div
               className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-relaxed ${
                 m.role === "user"
@@ -183,7 +181,7 @@ function AssistantPage() {
             aria-label="Enviar mensagem"
             className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-green text-primary-foreground transition hover:bg-brand-green-dark disabled:opacity-40"
           >
-            <span aria-hidden="true">➤</span>
+            <Send className="h-4.5 w-4.5" strokeWidth={2.25} aria-hidden="true" />
           </button>
         </div>
       </form>

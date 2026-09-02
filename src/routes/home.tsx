@@ -1,5 +1,27 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import {
+  Sun,
+  Sunset,
+  Moon,
+  Bell,
+  Eye,
+  EyeOff,
+  Plus,
+  ArrowUpRight,
+  ArrowDownLeft,
+  ArrowUpLeft,
+  Send,
+  History,
+  ShieldCheck,
+  HelpCircle,
+  Home as HomeIcon,
+  Users,
+  Wallet,
+  User,
+  type LucideIcon,
+} from "lucide-react";
+import logo from "/logo-group-mobil.webp";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -28,9 +50,9 @@ function useGreetingPeriod() {
     return () => clearInterval(id);
   }, []);
 
-  if (hour < 12) return { label: "Bom dia", icon: "☀️" };
-  if (hour < 18) return { label: "Boa tarde", icon: "🌤️" };
-  return { label: "Boa noite", icon: "🌙" };
+  if (hour < 12) return { label: "Bom dia", icon: Sun };
+  if (hour < 18) return { label: "Boa tarde", icon: Sunset };
+  return { label: "Boa noite", icon: Moon };
 }
 
 function useCurrentUser() {
@@ -107,12 +129,12 @@ function HomePage() {
 
 function Header({
   greetingLabel,
-  greetingIcon,
+  greetingIcon: GreetingIcon,
   userName,
   unreadCount,
 }: {
   greetingLabel: string;
-  greetingIcon: string;
+  greetingIcon: LucideIcon;
   userName: string | null;
   unreadCount: number;
 }) {
@@ -126,8 +148,13 @@ function Header({
     >
       <div className="mx-auto flex max-w-md items-start justify-between">
         <div>
-          <p className="font-display text-xl font-semibold text-white">
-            {greetingIcon} {greetingLabel}
+          <p className="flex items-center gap-2 font-display text-xl font-semibold text-white">
+            <GreetingIcon
+              className="h-5 w-5 text-brand-green"
+              strokeWidth={2.25}
+              aria-hidden="true"
+            />
+            {greetingLabel}
             {userName ? `, ${userName}!` : "!"}
           </p>
           <p className="mt-1 text-sm text-white/55">Que bom ter você de volta.</p>
@@ -138,7 +165,7 @@ function Header({
             aria-label="Notificações"
             className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/15"
           >
-            <span aria-hidden="true">🔔</span>
+            <Bell className="h-4.5 w-4.5" strokeWidth={2} aria-hidden="true" />
             {unreadCount > 0 && (
               <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-brand-green ring-2 ring-navy-900" />
             )}
@@ -172,7 +199,11 @@ function BalanceCard({
           aria-label={visible ? "Ocultar saldo" : "Mostrar saldo"}
           className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/80 transition hover:bg-white/15"
         >
-          <span aria-hidden="true">{visible ? "👁" : "🙈"}</span>
+          {visible ? (
+            <Eye className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+          ) : (
+            <EyeOff className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+          )}
         </button>
       </div>
       <p className="mt-3 font-display text-4xl font-bold tracking-tight">
@@ -186,21 +217,21 @@ function PrimaryActions() {
   return (
     <div className="grid grid-cols-2 gap-3">
       <button className="flex items-center justify-center gap-2 rounded-2xl bg-brand-green py-4 font-display text-sm font-semibold text-primary-foreground shadow-md shadow-brand-green/25 transition hover:bg-brand-green-dark">
-        <span aria-hidden="true">＋</span> Depositar
+        <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" /> Depositar
       </button>
       <button className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card py-4 font-display text-sm font-semibold text-card-foreground shadow-sm transition hover:bg-accent">
-        <span aria-hidden="true">↗</span> Levantar
+        <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" /> Levantar
       </button>
     </div>
   );
 }
 
 function QuickActions() {
-  const actions = [
-    { icon: "💸", label: "Transferir" },
-    { icon: "📜", label: "Histórico" },
-    { icon: "🔐", label: "Segurança" },
-    { icon: "❓", label: "Ajuda" },
+  const actions: { icon: LucideIcon; label: string }[] = [
+    { icon: Send, label: "Transferir" },
+    { icon: History, label: "Histórico" },
+    { icon: ShieldCheck, label: "Segurança" },
+    { icon: HelpCircle, label: "Ajuda" },
   ];
 
   return (
@@ -213,10 +244,10 @@ function QuickActions() {
             className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-4 text-left transition hover:bg-accent"
           >
             <span
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-base"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-brand-green-dark"
               aria-hidden="true"
             >
-              {action.icon}
+              <action.icon className="h-4.5 w-4.5" strokeWidth={2} />
             </span>
             <span className="text-sm font-medium text-card-foreground">{action.label}</span>
           </button>
@@ -232,7 +263,14 @@ function SecurityBanner() {
     <section className="rounded-2xl bg-gradient-to-br from-navy-900 to-navy-800 p-5 text-white">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="font-display text-sm font-semibold">🔐 Segurança da sua conta</p>
+          <p className="flex items-center gap-1.5 font-display text-sm font-semibold">
+            <ShieldCheck
+              className="h-4 w-4 text-brand-green"
+              strokeWidth={2.25}
+              aria-hidden="true"
+            />
+            Segurança da sua conta
+          </p>
           <p className="mt-1.5 text-sm leading-relaxed text-white/60">
             Nunca partilhe o seu PIN ou código de verificação com ninguém.
           </p>
@@ -276,7 +314,11 @@ function RecentMovements({ movements }: { movements: Movement[] }) {
                   }`}
                   aria-hidden="true"
                 >
-                  {m.direction === "in" ? "↓" : "↑"}
+                  {m.direction === "in" ? (
+                    <ArrowDownLeft className="h-4 w-4" strokeWidth={2.5} />
+                  ) : (
+                    <ArrowUpLeft className="h-4 w-4" strokeWidth={2.5} />
+                  )}
                 </span>
                 <div>
                   <p className="text-sm font-medium text-card-foreground">{m.description}</p>
@@ -306,12 +348,14 @@ function RecentMovements({ movements }: { movements: Movement[] }) {
 function AssistantCard() {
   return (
     <section className="flex items-center gap-4 rounded-2xl border border-border bg-card p-5">
-      <span
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-navy-900 text-lg"
+      <img
+        src={logo}
+        alt=""
         aria-hidden="true"
-      >
-        🤖
-      </span>
+        className="h-11 w-11 shrink-0 rounded-full bg-navy-900 object-contain p-1.5"
+        width={44}
+        height={44}
+      />
       <div className="flex-1">
         <p className="font-display text-sm font-semibold text-card-foreground">
           Assistente Group Mobil
@@ -326,18 +370,17 @@ function AssistantCard() {
       >
         Conversar
       </Link>
-
     </section>
   );
 }
 
 function BottomNav() {
-  const items: { icon: string; label: string; active: boolean }[] = [
-    { icon: "🏠", label: "Home", active: true },
-    { icon: "👥", label: "Grupos", active: false },
-    { icon: "💳", label: "Carteira", active: false },
-    { icon: "🔔", label: "Notificações", active: false },
-    { icon: "👤", label: "Perfil", active: false },
+  const items: { icon: LucideIcon; label: string; active: boolean }[] = [
+    { icon: HomeIcon, label: "Home", active: true },
+    { icon: Users, label: "Grupos", active: false },
+    { icon: Wallet, label: "Carteira", active: false },
+    { icon: Bell, label: "Notificações", active: false },
+    { icon: User, label: "Perfil", active: false },
   ];
 
   return (
@@ -351,16 +394,26 @@ function BottomNav() {
   );
 }
 
-function NavItem({ icon, label, active }: { icon: string; label: string; active: boolean }) {
+function NavItem({
+  icon: Icon,
+  label,
+  active,
+}: {
+  icon: LucideIcon;
+  label: string;
+  active: boolean;
+}) {
   return (
     <button
       className={`flex flex-1 flex-col items-center gap-1 rounded-xl py-1.5 transition ${
         active ? "text-brand-green-dark" : "text-muted-foreground hover:text-foreground"
       }`}
     >
-      <span className={`text-lg ${active ? "" : "opacity-70"}`} aria-hidden="true">
-        {icon}
-      </span>
+      <Icon
+        className={`h-5 w-5 ${active ? "" : "opacity-70"}`}
+        strokeWidth={active ? 2.25 : 2}
+        aria-hidden="true"
+      />
       <span className={`text-[11px] ${active ? "font-semibold" : "font-medium"}`}>{label}</span>
       {active && <span className="mt-0.5 h-1 w-1 rounded-full bg-brand-green" />}
     </button>
