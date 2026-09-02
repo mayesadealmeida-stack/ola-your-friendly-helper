@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, Camera, Check, LogOut, Loader2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-profile";
 
@@ -27,6 +28,7 @@ function formatPhone(phone: string | undefined): string {
 
 function ConfiguracoesPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { profile, loading, notAuthenticated, updateProfile, uploadAvatar } = useProfile();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -146,6 +148,7 @@ function ConfiguracoesPage() {
 
   async function handleLogout() {
     await supabase.auth.signOut();
+    queryClient.clear();
     navigate({ to: "/" });
   }
 

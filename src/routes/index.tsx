@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { setRememberMe } from "@/integrations/supabase/remember-me";
 
 function normalizePhone(input: string): string {
   const digits = input.replace(/\D/g, "");
@@ -22,7 +23,6 @@ function validate(phone: string, password: string): string | null {
     return "A senha deve conter letras e números.";
   return null;
 }
-
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -90,6 +90,8 @@ function Index() {
     }
 
     // Auto-confirmação está ativa: entra logo após criar a conta.
+    // Conta nova fica lembrada por omissão, até o utilizador terminar sessão.
+    setRememberMe(true);
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: phoneToEmail(rawPhone),
       password,
@@ -117,6 +119,9 @@ function Index() {
     }
 
     setLoading(true);
+    // Define ANTES de entrar: é neste momento que a sessão é gravada, e o
+    // storage do Supabase lê esta preferência para decidir onde guardá-la.
+    setRememberMe(rememberMe);
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email: phoneToEmail(rawPhone),
       password,
@@ -129,7 +134,6 @@ function Index() {
     }
     navigate({ to: "/home" });
   }
-
 
   if (view === "landing") {
     return <Landing onSignup={() => setView("signup")} onLogin={() => setView("login")} />;

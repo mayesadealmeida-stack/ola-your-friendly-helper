@@ -1,72 +1,68 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type Profile = Tables<"profiles">;
 
-type ProfileState = {
-  userId: string | null;
-  profile: Profile | null;
-  loading: boolean;
-  notAuthenticated: boolean;
-};
+type ProfileQueryData = { userId: string | null; profile: Profile | null };
+
+export const PROFILE_QUERY_KEY = ["profile"] as const;
 
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 
+async function fetchProfileData(): Promise<ProfileQueryData> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData.user;
+
+  if (!user) return { userId: null, profile: null };
+
+  const { data } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+  return { userId: user.id, profile: data };
+}
+
+/**
+ * Dados do perfil, partilhados (e em cache) entre todos os ecrãs que os usam —
+ * navegar entre páginas já não dispara um novo carregamento sempre que os dados
+ * já estão em memória.
+ */
 export function useProfile() {
-  const [state, setState] = useState<ProfileState>({
-    userId: null,
-    profile: null,
-    loading: true,
-    notAuthenticated: false,
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    queryKey: PROFILE_QUERY_KEY,
+    queryFn: fetchProfileData,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
-  const load = useCallback(async () => {
-    setState((s) => ({ ...s, loading: true }));
-
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData.user;
-
-    if (!user) {
-      setState({ userId: null, profile: null, loading: false, notAuthenticated: true });
-      return;
-    }
-
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    setState({ userId: user.id, profile: profileData, loading: false, notAuthenticated: false });
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  const userId = query.data?.userId ?? null;
+  const profile = query.data?.profile ?? null;
 
   const updateProfile = useCallback(
     async (updates: Partial<Pick<Profile, "full_name" | "username" | "avatar_url">>) => {
-      if (!state.userId) return { error: "Sessão expirada. Entre novamente." };
+      if (!userId) return { error: "Sessão expirada. Entre novamente." };
 
       const { data, error } = await supabase
         .from("profiles")
         .update(updates)
-        .eq("id", state.userId)
+        .eq("id", userId)
         .select()
         .single();
 
       if (error) return { error: error.message };
 
-      setState((s) => ({ ...s, profile: data }));
+      queryClient.setQueryData<ProfileQueryData>(PROFILE_QUERY_KEY, (old) =>
+        old ? { ...old, profile: data } : { userId, profile: data },
+      );
       return { error: null };
     },
-    [state.userId],
+    [userId, queryClient],
   );
 
   const uploadAvatar = useCallback(
     async (file: File) => {
-      if (!state.userId) return { error: "Sessão expirada. Entre novamente." };
+      if (!userId) return { error: "Sessão expirada. Entre novamente." };
 
       if (!file.type.startsWith("image/")) {
         return { error: "Escolha uma imagem (JPG, PNG ou WEBP)." };
@@ -76,7 +72,7 @@ export function useProfile() {
       }
 
       const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${state.userId}/avatar.${ext}`;
+      const path = `${userId}/avatar.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
@@ -92,8 +88,21 @@ export function useProfile() {
 
       return updateProfile({ avatar_url: url });
     },
-    [state.userId, updateProfile],
+    [userId, updateProfile],
   );
 
-  return { ...state, reload: load, updateProfile, uploadAvatar };
+  const reload = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEY }),
+    [queryClient],
+  );
+
+  return {
+    userId,
+    profile,
+    loading: query.isPending,
+    notAuthenticated: query.isSuccess && !userId,
+    reload,
+    updateProfile,
+    uploadAvatar,
+  };
 }

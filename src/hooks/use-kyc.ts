@@ -1,16 +1,14 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type KycBasic = Tables<"kyc_basic">;
 export type KycStatus = KycBasic["status"];
 
-type KycState = {
-  userId: string | null;
-  kyc: KycBasic | null;
-  loading: boolean;
-  notAuthenticated: boolean;
-};
+type KycQueryData = { userId: string | null; kyc: KycBasic | null };
+
+export const KYC_QUERY_KEY = ["kyc"] as const;
 
 export type KycInput = {
   full_name: string;
@@ -21,43 +19,42 @@ export type KycInput = {
   address_reference: string;
 };
 
+async function fetchKycData(): Promise<KycQueryData> {
+  const { data: userData } = await supabase.auth.getUser();
+  const user = userData.user;
+
+  if (!user) return { userId: null, kyc: null };
+
+  const { data } = await supabase.from("kyc_basic").select("*").eq("id", user.id).maybeSingle();
+  return { userId: user.id, kyc: data };
+}
+
+/**
+ * Dados de KYC em cache partilhado — mesmo princípio do useProfile: evita
+ * recarregar/mostrar "a processar" sempre que se navega entre páginas.
+ */
 export function useKyc() {
-  const [state, setState] = useState<KycState>({
-    userId: null,
-    kyc: null,
-    loading: true,
-    notAuthenticated: false,
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
+    queryKey: KYC_QUERY_KEY,
+    queryFn: fetchKycData,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
 
-  const load = useCallback(async () => {
-    setState((s) => ({ ...s, loading: true }));
-
-    const { data: userData } = await supabase.auth.getUser();
-    const user = userData.user;
-
-    if (!user) {
-      setState({ userId: null, kyc: null, loading: false, notAuthenticated: true });
-      return;
-    }
-
-    const { data } = await supabase.from("kyc_basic").select("*").eq("id", user.id).maybeSingle();
-
-    setState({ userId: user.id, kyc: data, loading: false, notAuthenticated: false });
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  const userId = query.data?.userId ?? null;
+  const kyc = query.data?.kyc ?? null;
 
   const submitKyc = useCallback(
     async (input: KycInput) => {
-      if (!state.userId) return { error: "Sessão expirada. Entre novamente." };
+      if (!userId) return { error: "Sessão expirada. Entre novamente." };
 
       const { data, error } = await supabase
         .from("kyc_basic")
         .upsert(
           {
-            id: state.userId,
+            id: userId,
             ...input,
             status: "pending",
             submitted_at: new Date().toISOString(),
@@ -69,13 +66,27 @@ export function useKyc() {
 
       if (error) return { error: error.message };
 
-      setState((s) => ({ ...s, kyc: data }));
+      queryClient.setQueryData<KycQueryData>(KYC_QUERY_KEY, (old) =>
+        old ? { ...old, kyc: data } : { userId, kyc: data },
+      );
       return { error: null };
     },
-    [state.userId],
+    [userId, queryClient],
   );
 
-  return { ...state, reload: load, submitKyc };
+  const reload = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: KYC_QUERY_KEY }),
+    [queryClient],
+  );
+
+  return {
+    userId,
+    kyc,
+    loading: query.isPending,
+    notAuthenticated: query.isSuccess && !userId,
+    reload,
+    submitKyc,
+  };
 }
 
 export function calculateAge(birthDate: string | null | undefined): number | null {

@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-profile";
 import { useKyc, kycStatusLabel } from "@/hooks/use-kyc";
@@ -39,6 +40,7 @@ function formatPhone(phone: string | undefined): string {
 
 function PerfilPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { profile, loading, notAuthenticated, uploadAvatar } = useProfile();
   const { kyc } = useKyc();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -65,6 +67,7 @@ function PerfilPage() {
 
   async function handleLogout() {
     await supabase.auth.signOut();
+    queryClient.clear();
     navigate({ to: "/" });
   }
 
