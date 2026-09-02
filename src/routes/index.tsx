@@ -1,5 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+function normalizePhone(input: string): string {
+  const trimmed = input.replace(/\s+/g, "");
+  if (trimmed.startsWith("+")) return trimmed;
+  if (trimmed.startsWith("244")) return `+${trimmed}`;
+  return `+244${trimmed.replace(/^0+/, "")}`;
+}
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -24,8 +32,55 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
+  const navigate = useNavigate();
   const [view, setView] = useState<"landing" | "login" | "signup">("landing");
   const [rememberMe, setRememberMe] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSignup(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    const form = new FormData(e.currentTarget);
+    const fullName = String(form.get("fullName") ?? "").trim();
+    const username = String(form.get("username") ?? "").trim();
+    const phone = normalizePhone(String(form.get("phone") ?? "").trim());
+    const password = String(form.get("password") ?? "");
+
+    const { error: signUpError } = await supabase.auth.signUp({
+      phone,
+      password,
+      options: { data: { full_name: fullName, username } },
+    });
+
+    setLoading(false);
+    if (signUpError) {
+      setError(signUpError.message);
+      return;
+    }
+    navigate({ to: "/home" });
+  }
+
+  async function handleLogin(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    const form = new FormData(e.currentTarget);
+    const phone = normalizePhone(String(form.get("phone") ?? "").trim());
+    const password = String(form.get("password") ?? "");
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({ phone, password });
+
+    setLoading(false);
+    if (signInError) {
+      setError(signInError.message);
+      return;
+    }
+    navigate({ to: "/home" });
+  }
 
   if (view === "landing") {
     return <Landing onSignup={() => setView("signup")} onLogin={() => setView("login")} />;
@@ -84,13 +139,7 @@ function Index() {
                 Preencha os seus dados para criar ou entrar num grupo.
               </p>
 
-              <form
-                className="mt-8 space-y-4"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  alert("Conta criada com sucesso!");
-                }}
-              >
+              <form className="mt-8 space-y-4" onSubmit={handleSignup}>
                 <Field
                   label="Nome completo"
                   name="fullName"
@@ -122,17 +171,27 @@ function Index() {
                   required
                 />
 
+                {error && (
+                  <p className="rounded-lg bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive">
+                    {error}
+                  </p>
+                )}
+
                 <button
                   type="submit"
-                  className="mt-2 w-full rounded-xl bg-brand-green px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-brand-green-dark"
+                  disabled={loading}
+                  className="mt-2 w-full rounded-xl bg-brand-green px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-brand-green-dark disabled:opacity-60"
                 >
-                  Criar conta
+                  {loading ? "A criar conta…" : "Criar conta"}
                 </button>
                 <p className="text-center text-sm text-muted-foreground">
                   Já tem uma conta?{" "}
                   <button
                     type="button"
-                    onClick={() => setView("login")}
+                    onClick={() => {
+                      setError(null);
+                      setView("login");
+                    }}
                     className="font-semibold text-brand-green-dark underline-offset-4 hover:underline"
                   >
                     Entrar
@@ -152,13 +211,7 @@ function Index() {
                 Digite o seu telefone e senha para continuar.
               </p>
 
-              <form
-                className="mt-8 space-y-4"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  alert("Entrou com sucesso!");
-                }}
-              >
+              <form className="mt-8 space-y-4" onSubmit={handleLogin}>
                 <Field
                   label="Telefone"
                   name="phone"
@@ -196,17 +249,27 @@ function Index() {
                   </a>
                 </div>
 
+                {error && (
+                  <p className="rounded-lg bg-destructive/10 px-3.5 py-2.5 text-sm text-destructive">
+                    {error}
+                  </p>
+                )}
+
                 <button
                   type="submit"
-                  className="mt-2 w-full rounded-xl bg-brand-green px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-brand-green-dark"
+                  disabled={loading}
+                  className="mt-2 w-full rounded-xl bg-brand-green px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-brand-green-dark disabled:opacity-60"
                 >
-                  Entrar
+                  {loading ? "A entrar…" : "Entrar"}
                 </button>
                 <p className="text-center text-sm text-muted-foreground">
                   Ainda não tem conta?{" "}
                   <button
                     type="button"
-                    onClick={() => setView("signup")}
+                    onClick={() => {
+                      setError(null);
+                      setView("signup");
+                    }}
                     className="font-semibold text-brand-green-dark underline-offset-4 hover:underline"
                   >
                     Criar conta
