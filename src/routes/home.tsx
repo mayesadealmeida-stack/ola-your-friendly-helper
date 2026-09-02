@@ -15,13 +15,10 @@ import {
   History,
   ShieldCheck,
   HelpCircle,
-  Home as HomeIcon,
-  Users,
-  Wallet,
-  User,
   type LucideIcon,
 } from "lucide-react";
 import logo from "/logo-group-mobil.webp";
+import { BottomNav } from "@/components/bottom-nav";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -122,7 +119,7 @@ function HomePage() {
         </main>
       </div>
 
-      <BottomNav />
+      <BottomNav active="home" />
     </div>
   );
 }
@@ -371,51 +368,5 @@ function AssistantCard() {
         Conversar
       </Link>
     </section>
-  );
-}
-
-function BottomNav() {
-  const items: { icon: LucideIcon; label: string; active: boolean }[] = [
-    { icon: HomeIcon, label: "Home", active: true },
-    { icon: Users, label: "Grupos", active: false },
-    { icon: Wallet, label: "Carteira", active: false },
-    { icon: Bell, label: "Notificações", active: false },
-    { icon: User, label: "Perfil", active: false },
-  ];
-
-  return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/95 backdrop-blur">
-      <div className="mx-auto flex max-w-md items-stretch justify-between px-2 py-2">
-        {items.map((item) => (
-          <NavItem key={item.label} icon={item.icon} label={item.label} active={item.active} />
-        ))}
-      </div>
-    </nav>
-  );
-}
-
-function NavItem({
-  icon: Icon,
-  label,
-  active,
-}: {
-  icon: LucideIcon;
-  label: string;
-  active: boolean;
-}) {
-  return (
-    <button
-      className={`flex flex-1 flex-col items-center gap-1 rounded-xl py-1.5 transition ${
-        active ? "text-brand-green-dark" : "text-muted-foreground hover:text-foreground"
-      }`}
-    >
-      <Icon
-        className={`h-5 w-5 ${active ? "" : "opacity-70"}`}
-        strokeWidth={active ? 2.25 : 2}
-        aria-hidden="true"
-      />
-      <span className={`text-[11px] ${active ? "font-semibold" : "font-medium"}`}>{label}</span>
-      {active && <span className="mt-0.5 h-1 w-1 rounded-full bg-brand-green" />}
-    </button>
   );
 }

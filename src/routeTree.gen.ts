@@ -12,6 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AssistenteRouteImport } from './routes/assistente'
 import { Route as HomeRouteImport } from './routes/home'
+import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as PerfilIndexRouteImport } from './routes/perfil.index'
+import { Route as PerfilConfiguracoesRouteImport } from './routes/perfil.configuracoes'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -28,35 +31,72 @@ const HomeRoute = HomeRouteImport.update({
   path: '/home',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PerfilRoute = PerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerfilIndexRoute = PerfilIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PerfilRoute,
+} as any)
+const PerfilConfiguracoesRoute = PerfilConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => PerfilRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/assistente': typeof AssistenteRoute
   '/home': typeof HomeRoute
+  '/perfil': typeof PerfilRouteWithChildren
+  '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
+  '/perfil/': typeof PerfilIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/assistente': typeof AssistenteRoute
   '/home': typeof HomeRoute
+  '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
+  '/perfil': typeof PerfilIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/assistente': typeof AssistenteRoute
   '/home': typeof HomeRoute
+  '/perfil': typeof PerfilRouteWithChildren
+  '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
+  '/perfil/': typeof PerfilIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/assistente' | '/home'
+  fullPaths:
+    | '/'
+    | '/assistente'
+    | '/home'
+    | '/perfil'
+    | '/perfil/configuracoes'
+    | '/perfil/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/assistente' | '/home'
-  id: '__root__' | '/' | '/assistente' | '/home'
+  to: '/' | '/assistente' | '/home' | '/perfil/configuracoes' | '/perfil'
+  id:
+    | '__root__'
+    | '/'
+    | '/assistente'
+    | '/home'
+    | '/perfil'
+    | '/perfil/configuracoes'
+    | '/perfil/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AssistenteRoute: typeof AssistenteRoute
   HomeRoute: typeof HomeRoute
+  PerfilRoute: typeof PerfilRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -82,13 +122,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HomeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/perfil': {
+      id: '/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof PerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/perfil/': {
+      id: '/perfil/'
+      path: '/'
+      fullPath: '/perfil/'
+      preLoaderRoute: typeof PerfilIndexRouteImport
+      parentRoute: typeof PerfilRoute
+    }
+    '/perfil/configuracoes': {
+      id: '/perfil/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/perfil/configuracoes'
+      preLoaderRoute: typeof PerfilConfiguracoesRouteImport
+      parentRoute: typeof PerfilRoute
+    }
   }
 }
+
+interface PerfilRouteChildren {
+  PerfilConfiguracoesRoute: typeof PerfilConfiguracoesRoute
+  PerfilIndexRoute: typeof PerfilIndexRoute
+}
+
+const PerfilRouteChildren: PerfilRouteChildren = {
+  PerfilConfiguracoesRoute: PerfilConfiguracoesRoute,
+  PerfilIndexRoute: PerfilIndexRoute,
+}
+
+const PerfilRouteWithChildren =
+  PerfilRoute._addFileChildren(PerfilRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AssistenteRoute: AssistenteRoute,
   HomeRoute: HomeRoute,
+  PerfilRoute: PerfilRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
