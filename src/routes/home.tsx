@@ -8,23 +8,26 @@ import {
   Eye,
   EyeOff,
   Plus,
-  ArrowUpRight,
-  ArrowDownLeft,
-  ArrowUpLeft,
   Send,
   History,
   ShieldCheck,
   HelpCircle,
-  Heart,
+  BadgeCheck,
+  CheckCircle2,
+  ThumbsUp,
   MessageCircle,
   Share2,
+  LayoutGrid,
+  ArrowDownLeft,
+  ArrowUpLeft,
   type LucideIcon,
 } from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
 import { UserAvatarLink } from "@/components/user-avatar";
 import { useProfile } from "@/hooks/use-profile";
 import { useBalance } from "@/hooks/use-balance";
-import { usePosts, relativeTime, type Post } from "@/hooks/use-posts";
+import { useKyc } from "@/hooks/use-kyc";
+import { usePosts, relativeTime, type Post, type PostCategory } from "@/hooks/use-posts";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -76,6 +79,8 @@ function useRecentMovements() {
   return { movements: [] as Movement[], loading: false };
 }
 
+type FeedFilter = "todos" | PostCategory;
+
 // ---------------------------------------------------------------------------
 
 function HomePage() {
@@ -87,6 +92,12 @@ function HomePage() {
   const recent = useRecentMovements();
   const feed = usePosts();
   const [showBalance, setShowBalance] = useState(true);
+  const [activeCategory, setActiveCategory] = useState<FeedFilter>("todos");
+
+  const filteredPosts =
+    activeCategory === "todos"
+      ? feed.posts
+      : feed.posts.filter((p) => p.category === activeCategory);
 
   return (
     <div className="min-h-screen bg-secondary/40 pb-28">
@@ -105,15 +116,17 @@ function HomePage() {
             onToggleVisible={() => setShowBalance((v) => !v)}
           />
 
-          <PrimaryActions />
+          <PromoCarousel />
 
           <QuickActions />
 
-          <SecurityBanner />
-
           <RecentMovements movements={recent.movements} />
 
-          <PostsFeed posts={feed.posts} />
+          <FeedSection
+            posts={filteredPosts}
+            activeCategory={activeCategory}
+            onCategoryChange={setActiveCategory}
+          />
         </main>
       </div>
 
@@ -172,6 +185,15 @@ function Header({
   );
 }
 
+type BalanceAction = { icon: LucideIcon; label: string; to?: string; href?: string };
+
+const BALANCE_ACTIONS: BalanceAction[] = [
+  { icon: Plus, label: "Depositar", to: "/carteira/depositar" },
+  { icon: Send, label: "Transferir", to: "/carteira" },
+  { icon: History, label: "Extrato", href: "#movimentacoes" },
+  { icon: LayoutGrid, label: "Mais", to: "/carteira" },
+];
+
 function BalanceCard({
   amountKz,
   visible,
@@ -202,34 +224,117 @@ function BalanceCard({
       <p className="mt-3 font-display text-4xl font-bold tracking-tight">
         {visible ? `${formatted} Kz` : "•••••• Kz"}
       </p>
+
+      <div className="mt-6 grid grid-cols-4 gap-2">
+        {BALANCE_ACTIONS.map((action) => {
+          const content = (
+            <>
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 transition group-hover:bg-white/15">
+                <action.icon className="h-4.5 w-4.5" strokeWidth={2} aria-hidden="true" />
+              </span>
+              <span className="text-center text-[11px] font-medium text-white/80">
+                {action.label}
+              </span>
+            </>
+          );
+          const className = "group flex flex-col items-center gap-1.5";
+
+          return action.to ? (
+            <Link key={action.label} to={action.to} className={className}>
+              {content}
+            </Link>
+          ) : (
+            <a key={action.label} href={action.href} className={className}>
+              {content}
+            </a>
+          );
+        })}
+      </div>
     </section>
   );
 }
 
-function PrimaryActions() {
+type PromoSlide = {
+  key: string;
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  cta?: { label: string; to: string };
+};
+
+function PromoCarousel() {
+  const { kyc, loading } = useKyc();
+  const [index, setIndex] = useState(0);
+
+  const slides: PromoSlide[] = [];
+  if (!loading && kyc?.status !== "verified") {
+    slides.push({
+      key: "kyc",
+      icon: BadgeCheck,
+      title: "Verifique a sua conta",
+      description: "Complete o KYC Basic para desbloquear todas as funcionalidades.",
+      cta: { label: "Verificar agora", to: "/perfil/kyc" },
+    });
+  }
+  slides.push({
+    key: "security",
+    icon: ShieldCheck,
+    title: "Segurança da sua conta",
+    description: "Nunca partilhe o seu PIN ou código de verificação com ninguém.",
+  });
+
+  useEffect(() => {
+    if (slides.length < 2) return;
+    const id = setInterval(() => setIndex((i) => (i + 1) % slides.length), 6000);
+    return () => clearInterval(id);
+  }, [slides.length]);
+
+  // slides tem sempre pelo menos o slide de segurança.
+  const current = slides[Math.min(index, slides.length - 1)]!;
+  const Icon = current.icon;
+
   return (
-    <div className="grid grid-cols-2 gap-3">
-      <Link
-        to="/carteira/depositar"
-        className="flex items-center justify-center gap-2 rounded-2xl bg-brand-green py-4 font-display text-sm font-semibold text-primary-foreground shadow-md shadow-brand-green/25 transition hover:bg-brand-green-dark"
-      >
-        <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" /> Depositar
-      </Link>
-      <Link
-        to="/carteira"
-        className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card py-4 font-display text-sm font-semibold text-card-foreground shadow-sm transition hover:bg-accent"
-      >
-        <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" /> Levantar
-      </Link>
-    </div>
+    <section className="rounded-2xl bg-gradient-to-br from-navy-900 to-navy-800 p-5 text-white">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="flex items-center gap-1.5 font-display text-sm font-semibold">
+            <Icon className="h-4 w-4 text-brand-green" strokeWidth={2.25} aria-hidden="true" />
+            {current.title}
+          </p>
+          <p className="mt-1.5 text-sm leading-relaxed text-white/60">{current.description}</p>
+        </div>
+      </div>
+
+      {current.cta && (
+        <Link
+          to={current.cta.to}
+          className="mt-4 inline-block rounded-full bg-white/10 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/15"
+        >
+          {current.cta.label}
+        </Link>
+      )}
+
+      {slides.length > 1 && (
+        <div className="mt-4 flex gap-1.5">
+          {slides.map((s, i) => (
+            <span
+              key={s.key}
+              className={`h-1.5 rounded-full transition-all ${
+                i === index ? "w-4 bg-brand-green" : "w-1.5 bg-white/25"
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
 function QuickActions() {
-  const actions: { icon: LucideIcon; label: string; to?: string }[] = [
-    { icon: Send, label: "Transferir", to: "/carteira" },
-    { icon: History, label: "Histórico" },
-    { icon: ShieldCheck, label: "Segurança" },
+  const actions: { icon: LucideIcon; label: string; to?: string; href?: string }[] = [
+    { icon: History, label: "Histórico", href: "#movimentacoes" },
+    { icon: BadgeCheck, label: "KYC Basic", to: "/perfil/kyc" },
+    { icon: ShieldCheck, label: "Segurança", to: "/perfil/configuracoes" },
     { icon: HelpCircle, label: "Ajuda", to: "/assistente" },
   ];
 
@@ -257,9 +362,9 @@ function QuickActions() {
               {content}
             </Link>
           ) : (
-            <button key={action.label} type="button" className={className}>
+            <a key={action.label} href={action.href} className={className}>
               {content}
-            </button>
+            </a>
           );
         })}
       </div>
@@ -267,40 +372,9 @@ function QuickActions() {
   );
 }
 
-function SecurityBanner() {
-  // Estático por agora — preparado para virar carrossel (novidades, avisos, dicas).
-  return (
-    <section className="rounded-2xl bg-gradient-to-br from-navy-900 to-navy-800 p-5 text-white">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="flex items-center gap-1.5 font-display text-sm font-semibold">
-            <ShieldCheck
-              className="h-4 w-4 text-brand-green"
-              strokeWidth={2.25}
-              aria-hidden="true"
-            />
-            Segurança da sua conta
-          </p>
-          <p className="mt-1.5 text-sm leading-relaxed text-white/60">
-            Nunca partilhe o seu PIN ou código de verificação com ninguém.
-          </p>
-        </div>
-      </div>
-      <button className="mt-4 rounded-full bg-white/10 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/15">
-        Saiba mais
-      </button>
-      <div className="mt-4 flex gap-1.5">
-        <span className="h-1.5 w-4 rounded-full bg-brand-green" />
-        <span className="h-1.5 w-1.5 rounded-full bg-white/25" />
-        <span className="h-1.5 w-1.5 rounded-full bg-white/25" />
-      </div>
-    </section>
-  );
-}
-
 function RecentMovements({ movements }: { movements: Movement[] }) {
   return (
-    <section>
+    <section id="movimentacoes" className="scroll-mt-6">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="font-display text-sm font-semibold text-foreground">
           Movimentações recentes
@@ -355,10 +429,40 @@ function RecentMovements({ movements }: { movements: Movement[] }) {
   );
 }
 
-function PostsFeed({ posts }: { posts: Post[] }) {
+const CATEGORY_TABS: { key: FeedFilter; label: string }[] = [
+  { key: "todos", label: "Novidades" },
+  { key: "evento", label: "Eventos" },
+  { key: "noticia", label: "Notícias" },
+];
+
+function FeedSection({
+  posts,
+  activeCategory,
+  onCategoryChange,
+}: {
+  posts: Post[];
+  activeCategory: FeedFilter;
+  onCategoryChange: (category: FeedFilter) => void;
+}) {
   return (
     <section>
-      <h2 className="mb-3 font-display text-sm font-semibold text-foreground">Novidades</h2>
+      <div className="mb-4 flex items-center gap-5 border-b border-border">
+        {CATEGORY_TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => onCategoryChange(tab.key)}
+            className={`relative pb-3 font-display text-sm font-semibold transition ${
+              activeCategory === tab.key ? "text-foreground" : "text-muted-foreground"
+            }`}
+          >
+            {tab.label}
+            {activeCategory === tab.key && (
+              <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-brand-green" />
+            )}
+          </button>
+        ))}
+      </div>
 
       {posts.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border bg-card px-5 py-8 text-center">
@@ -392,7 +496,14 @@ function PostCard({ post }: { post: Post }) {
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-card-foreground">{post.author_name}</p>
+          <p className="flex items-center gap-1 truncate text-sm font-semibold text-card-foreground">
+            {post.author_name}
+            <CheckCircle2
+              className="h-3.5 w-3.5 shrink-0 text-brand-green"
+              strokeWidth={2.25}
+              aria-hidden="true"
+            />
+          </p>
           <p className="text-xs text-muted-foreground">{relativeTime(post.created_at)}</p>
         </div>
       </div>
@@ -419,7 +530,7 @@ function PostCard({ post }: { post: Post }) {
 
       <div className="flex items-center gap-5 px-4 py-3 text-muted-foreground">
         <span className="flex items-center gap-1.5 text-xs font-medium">
-          <Heart className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+          <ThumbsUp className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
           {post.likes_count}
         </span>
         <span className="flex items-center gap-1.5 text-xs font-medium">

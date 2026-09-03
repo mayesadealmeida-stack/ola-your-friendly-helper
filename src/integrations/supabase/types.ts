@@ -19,6 +19,7 @@ export type Database = {
           author_avatar_url: string | null
           author_name: string
           body: string
+          category: string
           comments_count: number
           created_at: string
           id: string
@@ -31,6 +32,7 @@ export type Database = {
           author_avatar_url?: string | null
           author_name?: string
           body?: string
+          category?: string
           comments_count?: number
           created_at?: string
           id?: string
@@ -43,6 +45,7 @@ export type Database = {
           author_avatar_url?: string | null
           author_name?: string
           body?: string
+          category?: string
           comments_count?: number
           created_at?: string
           id?: string

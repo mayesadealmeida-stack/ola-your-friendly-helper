@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type Post = Tables<"posts">;
+export type PostCategory = "novidade" | "evento" | "noticia";
 
 export const POSTS_QUERY_KEY = ["posts"] as const;
 
