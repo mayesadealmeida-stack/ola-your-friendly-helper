@@ -12,11 +12,14 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AssistenteRouteImport } from './routes/assistente'
 import { Route as CarteiraRouteImport } from './routes/carteira'
+import { Route as GruposRouteImport } from './routes/grupos'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as NivelRouteImport } from './routes/nivel'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as CarteiraIndexRouteImport } from './routes/carteira.index'
 import { Route as CarteiraDepositarRouteImport } from './routes/carteira.depositar'
+import { Route as GruposIndexRouteImport } from './routes/grupos.index'
+import { Route as GruposGroupIdRouteImport } from './routes/grupos.$groupId'
 import { Route as PerfilIndexRouteImport } from './routes/perfil.index'
 import { Route as PerfilConfiguracoesRouteImport } from './routes/perfil.configuracoes'
 import { Route as PerfilKycRouteImport } from './routes/perfil.kyc'
@@ -35,6 +38,11 @@ const AssistenteRoute = AssistenteRouteImport.update({
 const CarteiraRoute = CarteiraRouteImport.update({
   id: '/carteira',
   path: '/carteira',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GruposRoute = GruposRouteImport.update({
+  id: '/grupos',
+  path: '/grupos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HomeRoute = HomeRouteImport.update({
@@ -62,6 +70,16 @@ const CarteiraDepositarRoute = CarteiraDepositarRouteImport.update({
   path: '/depositar',
   getParentRoute: () => CarteiraRoute,
 } as any)
+const GruposIndexRoute = GruposIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => GruposRoute,
+} as any)
+const GruposGroupIdRoute = GruposGroupIdRouteImport.update({
+  id: '/$groupId',
+  path: '/$groupId',
+  getParentRoute: () => GruposRoute,
+} as any)
 const PerfilIndexRoute = PerfilIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -87,13 +105,16 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/assistente': typeof AssistenteRoute
   '/carteira': typeof CarteiraRouteWithChildren
+  '/grupos': typeof GruposRouteWithChildren
   '/home': typeof HomeRoute
   '/nivel': typeof NivelRoute
   '/perfil': typeof PerfilRouteWithChildren
   '/carteira/depositar': typeof CarteiraDepositarRoute
+  '/grupos/$groupId': typeof GruposGroupIdRoute
   '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
   '/perfil/kyc': typeof PerfilKycRoute
   '/carteira/': typeof CarteiraIndexRoute
+  '/grupos/': typeof GruposIndexRoute
   '/perfil/': typeof PerfilIndexRoute
   '/carteira/metodo/$method': typeof CarteiraMetodoMethodRoute
 }
@@ -103,9 +124,11 @@ export interface FileRoutesByTo {
   '/home': typeof HomeRoute
   '/nivel': typeof NivelRoute
   '/carteira/depositar': typeof CarteiraDepositarRoute
+  '/grupos/$groupId': typeof GruposGroupIdRoute
   '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
   '/perfil/kyc': typeof PerfilKycRoute
   '/carteira': typeof CarteiraIndexRoute
+  '/grupos': typeof GruposIndexRoute
   '/perfil': typeof PerfilIndexRoute
   '/carteira/metodo/$method': typeof CarteiraMetodoMethodRoute
 }
@@ -114,13 +137,16 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/assistente': typeof AssistenteRoute
   '/carteira': typeof CarteiraRouteWithChildren
+  '/grupos': typeof GruposRouteWithChildren
   '/home': typeof HomeRoute
   '/nivel': typeof NivelRoute
   '/perfil': typeof PerfilRouteWithChildren
   '/carteira/depositar': typeof CarteiraDepositarRoute
+  '/grupos/$groupId': typeof GruposGroupIdRoute
   '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
   '/perfil/kyc': typeof PerfilKycRoute
   '/carteira/': typeof CarteiraIndexRoute
+  '/grupos/': typeof GruposIndexRoute
   '/perfil/': typeof PerfilIndexRoute
   '/carteira/metodo/$method': typeof CarteiraMetodoMethodRoute
 }
@@ -130,13 +156,16 @@ export interface FileRouteTypes {
     | '/'
     | '/assistente'
     | '/carteira'
+    | '/grupos'
     | '/home'
     | '/nivel'
     | '/perfil'
     | '/carteira/depositar'
+    | '/grupos/$groupId'
     | '/perfil/configuracoes'
     | '/perfil/kyc'
     | '/carteira/'
+    | '/grupos/'
     | '/perfil/'
     | '/carteira/metodo/$method'
   fileRoutesByTo: FileRoutesByTo
@@ -146,9 +175,11 @@ export interface FileRouteTypes {
     | '/home'
     | '/nivel'
     | '/carteira/depositar'
+    | '/grupos/$groupId'
     | '/perfil/configuracoes'
     | '/perfil/kyc'
     | '/carteira'
+    | '/grupos'
     | '/perfil'
     | '/carteira/metodo/$method'
   id:
@@ -156,13 +187,16 @@ export interface FileRouteTypes {
     | '/'
     | '/assistente'
     | '/carteira'
+    | '/grupos'
     | '/home'
     | '/nivel'
     | '/perfil'
     | '/carteira/depositar'
+    | '/grupos/$groupId'
     | '/perfil/configuracoes'
     | '/perfil/kyc'
     | '/carteira/'
+    | '/grupos/'
     | '/perfil/'
     | '/carteira/metodo/$method'
   fileRoutesById: FileRoutesById
@@ -171,6 +205,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AssistenteRoute: typeof AssistenteRoute
   CarteiraRoute: typeof CarteiraRouteWithChildren
+  GruposRoute: typeof GruposRouteWithChildren
   HomeRoute: typeof HomeRoute
   NivelRoute: typeof NivelRoute
   PerfilRoute: typeof PerfilRouteWithChildren
@@ -197,6 +232,13 @@ declare module '@tanstack/react-router' {
       path: '/carteira'
       fullPath: '/carteira'
       preLoaderRoute: typeof CarteiraRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/grupos': {
+      id: '/grupos'
+      path: '/grupos'
+      fullPath: '/grupos'
+      preLoaderRoute: typeof GruposRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/home': {
@@ -233,6 +275,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/carteira/depositar'
       preLoaderRoute: typeof CarteiraDepositarRouteImport
       parentRoute: typeof CarteiraRoute
+    }
+    '/grupos/': {
+      id: '/grupos/'
+      path: '/'
+      fullPath: '/grupos/'
+      preLoaderRoute: typeof GruposIndexRouteImport
+      parentRoute: typeof GruposRoute
+    }
+    '/grupos/$groupId': {
+      id: '/grupos/$groupId'
+      path: '/$groupId'
+      fullPath: '/grupos/$groupId'
+      preLoaderRoute: typeof GruposGroupIdRouteImport
+      parentRoute: typeof GruposRoute
     }
     '/perfil/': {
       id: '/perfil/'
@@ -281,6 +337,19 @@ const CarteiraRouteWithChildren = CarteiraRoute._addFileChildren(
   CarteiraRouteChildren,
 )
 
+interface GruposRouteChildren {
+  GruposGroupIdRoute: typeof GruposGroupIdRoute
+  GruposIndexRoute: typeof GruposIndexRoute
+}
+
+const GruposRouteChildren: GruposRouteChildren = {
+  GruposGroupIdRoute: GruposGroupIdRoute,
+  GruposIndexRoute: GruposIndexRoute,
+}
+
+const GruposRouteWithChildren =
+  GruposRoute._addFileChildren(GruposRouteChildren)
+
 interface PerfilRouteChildren {
   PerfilConfiguracoesRoute: typeof PerfilConfiguracoesRoute
   PerfilKycRoute: typeof PerfilKycRoute
@@ -300,6 +369,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AssistenteRoute: AssistenteRoute,
   CarteiraRoute: CarteiraRouteWithChildren,
+  GruposRoute: GruposRouteWithChildren,
   HomeRoute: HomeRoute,
   NivelRoute: NivelRoute,
   PerfilRoute: PerfilRouteWithChildren,
