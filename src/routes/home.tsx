@@ -15,13 +15,16 @@ import {
   History,
   ShieldCheck,
   HelpCircle,
+  Heart,
+  MessageCircle,
+  Share2,
   type LucideIcon,
 } from "lucide-react";
-import logo from "/logo-group-mobil.webp";
 import { BottomNav } from "@/components/bottom-nav";
 import { UserAvatarLink } from "@/components/user-avatar";
 import { useProfile } from "@/hooks/use-profile";
 import { useBalance } from "@/hooks/use-balance";
+import { usePosts, relativeTime, type Post } from "@/hooks/use-posts";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -82,6 +85,7 @@ function HomePage() {
   const balance = useBalance();
   const notifications = useNotifications();
   const recent = useRecentMovements();
+  const feed = usePosts();
   const [showBalance, setShowBalance] = useState(true);
 
   return (
@@ -109,7 +113,7 @@ function HomePage() {
 
           <RecentMovements movements={recent.movements} />
 
-          <AssistantCard />
+          <PostsFeed posts={feed.posts} />
         </main>
       </div>
 
@@ -351,31 +355,82 @@ function RecentMovements({ movements }: { movements: Movement[] }) {
   );
 }
 
-function AssistantCard() {
+function PostsFeed({ posts }: { posts: Post[] }) {
   return (
-    <section className="flex items-center gap-4 rounded-2xl border border-border bg-card p-5">
-      <img
-        src={logo}
-        alt=""
-        aria-hidden="true"
-        className="h-11 w-11 shrink-0 rounded-full bg-navy-900 object-contain p-1.5"
-        width={44}
-        height={44}
-      />
-      <div className="flex-1">
-        <p className="font-display text-sm font-semibold text-card-foreground">
-          Assistente Group Mobil
-        </p>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          Precisa de ajuda? Estamos aqui para ajudar.
-        </p>
-      </div>
-      <Link
-        to="/assistente"
-        className="rounded-full bg-brand-green px-4 py-2 text-xs font-semibold text-primary-foreground transition hover:bg-brand-green-dark"
-      >
-        Conversar
-      </Link>
+    <section>
+      <h2 className="mb-3 font-display text-sm font-semibold text-foreground">Novidades</h2>
+
+      {posts.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-border bg-card px-5 py-8 text-center">
+          <p className="text-sm text-muted-foreground">Ainda não há publicações para mostrar.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {posts.map((post) => (
+            <PostCard key={post.id} post={post} />
+          ))}
+        </div>
+      )}
     </section>
+  );
+}
+
+function PostCard({ post }: { post: Post }) {
+  return (
+    <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <div className="flex items-center gap-3 px-4 pt-4">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-navy-900 font-display text-xs font-bold text-white">
+          {post.author_avatar_url ? (
+            <img
+              src={post.author_avatar_url}
+              alt=""
+              aria-hidden="true"
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            post.author_name.charAt(0).toUpperCase()
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-card-foreground">{post.author_name}</p>
+          <p className="text-xs text-muted-foreground">{relativeTime(post.created_at)}</p>
+        </div>
+      </div>
+
+      <div className="px-4 pb-1 pt-3">
+        <p className="font-display text-sm font-semibold leading-snug text-card-foreground">
+          {post.title}
+        </p>
+        {post.body && (
+          <p className="mt-1.5 line-clamp-4 text-sm leading-relaxed text-muted-foreground">
+            {post.body}
+          </p>
+        )}
+      </div>
+
+      {post.image_url && (
+        <img
+          src={post.image_url}
+          alt=""
+          className="mt-3 aspect-video w-full object-cover"
+          loading="lazy"
+        />
+      )}
+
+      <div className="flex items-center gap-5 px-4 py-3 text-muted-foreground">
+        <span className="flex items-center gap-1.5 text-xs font-medium">
+          <Heart className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+          {post.likes_count}
+        </span>
+        <span className="flex items-center gap-1.5 text-xs font-medium">
+          <MessageCircle className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+          {post.comments_count}
+        </span>
+        <span className="flex items-center gap-1.5 text-xs font-medium">
+          <Share2 className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+          {post.shares_count}
+        </span>
+      </div>
+    </article>
   );
 }

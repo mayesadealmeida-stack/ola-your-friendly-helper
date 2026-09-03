@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      posts: {
+        Row: {
+          author_avatar_url: string | null
+          author_name: string
+          body: string
+          comments_count: number
+          created_at: string
+          id: string
+          image_url: string | null
+          likes_count: number
+          shares_count: number
+          title: string
+        }
+        Insert: {
+          author_avatar_url?: string | null
+          author_name?: string
+          body?: string
+          comments_count?: number
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          likes_count?: number
+          shares_count?: number
+          title: string
+        }
+        Update: {
+          author_avatar_url?: string | null
+          author_name?: string
+          body?: string
+          comments_count?: number
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          likes_count?: number
+          shares_count?: number
+          title?: string
+        }
+        Relationships: []
+      }
       payment_methods: {
         Row: {
           account_holder: string
