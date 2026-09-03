@@ -66,9 +66,8 @@ export const LEVEL_META: Record<ComplianceLevel, LevelMeta> = {
     ring: "oklch(0.82 0.16 90)",
     chip: "bg-amber-400/20 text-amber-700",
     permissions: "Permissões ampliadas, sempre sujeitas às regras de segurança.",
-    permissionsNote: undefined,
     requirements: { rate: 98, historyDays: 180, cycles: 4, noPending: true },
-  } as LevelMeta,
+  },
 };
 
 export function nextLevel(level: ComplianceLevel): ComplianceLevel | null {
