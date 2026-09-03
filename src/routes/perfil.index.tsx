@@ -15,6 +15,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-profile";
 import { useKyc, kycStatusLabel } from "@/hooks/use-kyc";
+import { useCompliance } from "@/hooks/use-compliance";
+import { ComplianceCard } from "@/components/compliance-card";
 import { BottomNav } from "@/components/bottom-nav";
 
 export const Route = createFileRoute("/perfil/")({
@@ -43,6 +45,7 @@ function PerfilPage() {
   const queryClient = useQueryClient();
   const { profile, loading, notAuthenticated, uploadAvatar } = useProfile();
   const { kyc } = useKyc();
+  const { stats: complianceStats } = useCompliance();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -147,6 +150,8 @@ function PerfilPage() {
               <p className="mt-3 text-xs font-medium text-destructive">{uploadError}</p>
             )}
           </section>
+
+          <ComplianceCard stats={complianceStats} />
 
           <section className="overflow-hidden rounded-3xl bg-card shadow-xl shadow-navy-900/10">
             <MenuLink

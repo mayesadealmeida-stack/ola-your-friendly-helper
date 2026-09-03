@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AssistenteRouteImport } from './routes/assistente'
 import { Route as CarteiraRouteImport } from './routes/carteira'
 import { Route as HomeRouteImport } from './routes/home'
+import { Route as NivelRouteImport } from './routes/nivel'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as CarteiraIndexRouteImport } from './routes/carteira.index'
 import { Route as CarteiraDepositarRouteImport } from './routes/carteira.depositar'
@@ -39,6 +40,11 @@ const CarteiraRoute = CarteiraRouteImport.update({
 const HomeRoute = HomeRouteImport.update({
   id: '/home',
   path: '/home',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NivelRoute = NivelRouteImport.update({
+  id: '/nivel',
+  path: '/nivel',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PerfilRoute = PerfilRouteImport.update({
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/assistente': typeof AssistenteRoute
   '/carteira': typeof CarteiraRouteWithChildren
   '/home': typeof HomeRoute
+  '/nivel': typeof NivelRoute
   '/perfil': typeof PerfilRouteWithChildren
   '/carteira/depositar': typeof CarteiraDepositarRoute
   '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/assistente': typeof AssistenteRoute
   '/home': typeof HomeRoute
+  '/nivel': typeof NivelRoute
   '/carteira/depositar': typeof CarteiraDepositarRoute
   '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
   '/perfil/kyc': typeof PerfilKycRoute
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/assistente': typeof AssistenteRoute
   '/carteira': typeof CarteiraRouteWithChildren
   '/home': typeof HomeRoute
+  '/nivel': typeof NivelRoute
   '/perfil': typeof PerfilRouteWithChildren
   '/carteira/depositar': typeof CarteiraDepositarRoute
   '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
@@ -122,6 +131,7 @@ export interface FileRouteTypes {
     | '/assistente'
     | '/carteira'
     | '/home'
+    | '/nivel'
     | '/perfil'
     | '/carteira/depositar'
     | '/perfil/configuracoes'
@@ -134,6 +144,7 @@ export interface FileRouteTypes {
     | '/'
     | '/assistente'
     | '/home'
+    | '/nivel'
     | '/carteira/depositar'
     | '/perfil/configuracoes'
     | '/perfil/kyc'
@@ -146,6 +157,7 @@ export interface FileRouteTypes {
     | '/assistente'
     | '/carteira'
     | '/home'
+    | '/nivel'
     | '/perfil'
     | '/carteira/depositar'
     | '/perfil/configuracoes'
@@ -160,6 +172,7 @@ export interface RootRouteChildren {
   AssistenteRoute: typeof AssistenteRoute
   CarteiraRoute: typeof CarteiraRouteWithChildren
   HomeRoute: typeof HomeRoute
+  NivelRoute: typeof NivelRoute
   PerfilRoute: typeof PerfilRouteWithChildren
 }
 
@@ -191,6 +204,13 @@ declare module '@tanstack/react-router' {
       path: '/home'
       fullPath: '/home'
       preLoaderRoute: typeof HomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/nivel': {
+      id: '/nivel'
+      path: '/nivel'
+      fullPath: '/nivel'
+      preLoaderRoute: typeof NivelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/perfil': {
@@ -281,6 +301,7 @@ const rootRouteChildren: RootRouteChildren = {
   AssistenteRoute: AssistenteRoute,
   CarteiraRoute: CarteiraRouteWithChildren,
   HomeRoute: HomeRoute,
+  NivelRoute: NivelRoute,
   PerfilRoute: PerfilRouteWithChildren,
 }
 export const routeTree = rootRouteImport
