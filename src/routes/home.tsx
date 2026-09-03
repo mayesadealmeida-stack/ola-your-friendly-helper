@@ -7,7 +7,6 @@ import {
   Bell,
   Eye,
   EyeOff,
-  Plus,
   Send,
   History,
   ShieldCheck,
@@ -18,6 +17,7 @@ import {
   MessageCircle,
   Share2,
   LayoutGrid,
+  ArrowUpRight,
   ArrowDownLeft,
   ArrowUpLeft,
   type LucideIcon,
@@ -188,8 +188,8 @@ function Header({
 type BalanceAction = { icon: LucideIcon; label: string; to?: string; href?: string };
 
 const BALANCE_ACTIONS: BalanceAction[] = [
-  { icon: Plus, label: "Depositar", to: "/carteira/depositar" },
   { icon: Send, label: "Transferir", to: "/carteira" },
+  { icon: ArrowUpRight, label: "Levantar", to: "/carteira" },
   { icon: History, label: "Extrato", href: "#movimentacoes" },
   { icon: LayoutGrid, label: "Mais", to: "/carteira" },
 ];
@@ -206,33 +206,42 @@ function BalanceCard({
   const formatted = new Intl.NumberFormat("pt-AO", { maximumFractionDigits: 0 }).format(amountKz);
 
   return (
-    <section className="rounded-3xl bg-navy-900 p-6 text-white shadow-xl shadow-navy-900/25">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-white/55">Saldo disponível</p>
-        <button
-          onClick={onToggleVisible}
-          aria-label={visible ? "Ocultar saldo" : "Mostrar saldo"}
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white/80 transition hover:bg-white/15"
+    <section className="rounded-3xl bg-card p-6 shadow-xl shadow-navy-900/10">
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <button
+            onClick={onToggleVisible}
+            aria-label={visible ? "Ocultar saldo" : "Mostrar saldo"}
+            className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground"
+          >
+            Saldo disponível
+            {visible ? (
+              <Eye className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            ) : (
+              <EyeOff className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+            )}
+          </button>
+          <p className="mt-2 font-display text-4xl font-bold tracking-tight text-card-foreground">
+            {visible ? `${formatted} Kz` : "•••••• Kz"}
+          </p>
+        </div>
+
+        <Link
+          to="/carteira/depositar"
+          className="shrink-0 rounded-full bg-brand-green px-5 py-3 font-display text-sm font-semibold text-primary-foreground shadow-md shadow-brand-green/25 transition hover:bg-brand-green-dark"
         >
-          {visible ? (
-            <Eye className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-          ) : (
-            <EyeOff className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-          )}
-        </button>
+          Depositar
+        </Link>
       </div>
-      <p className="mt-3 font-display text-4xl font-bold tracking-tight">
-        {visible ? `${formatted} Kz` : "•••••• Kz"}
-      </p>
 
       <div className="mt-6 grid grid-cols-4 gap-2">
         {BALANCE_ACTIONS.map((action) => {
           const content = (
             <>
-              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 transition group-hover:bg-white/15">
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-foreground transition group-hover:bg-accent">
                 <action.icon className="h-4.5 w-4.5" strokeWidth={2} aria-hidden="true" />
               </span>
-              <span className="text-center text-[11px] font-medium text-white/80">
+              <span className="text-center text-[11px] font-medium text-muted-foreground">
                 {action.label}
               </span>
             </>
