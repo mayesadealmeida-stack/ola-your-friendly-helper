@@ -14,129 +14,8 @@ export type Database = {
   }
   public: {
     Tables: {
-      posts: {
-        Row: {
-          author_avatar_url: string | null
-          author_name: string
-          body: string
-          category: string
-          comments_count: number
-          created_at: string
-          id: string
-          image_url: string | null
-          likes_count: number
-          shares_count: number
-          title: string
-        }
-        Insert: {
-          author_avatar_url?: string | null
-          author_name?: string
-          body?: string
-          category?: string
-          comments_count?: number
-          created_at?: string
-          id?: string
-          image_url?: string | null
-          likes_count?: number
-          shares_count?: number
-          title: string
-        }
-        Update: {
-          author_avatar_url?: string | null
-          author_name?: string
-          body?: string
-          category?: string
-          comments_count?: number
-          created_at?: string
-          id?: string
-          image_url?: string | null
-          likes_count?: number
-          shares_count?: number
-          title?: string
-        }
-        Relationships: []
-      }
-      payment_methods: {
-        Row: {
-          account_holder: string
-          account_number: string
-          bank_name: string
-          created_at: string
-          id: string
-          method: string
-          phone: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          account_holder?: string
-          account_number?: string
-          bank_name?: string
-          created_at?: string
-          id?: string
-          method: string
-          phone?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          account_holder?: string
-          account_number?: string
-          bank_name?: string
-          created_at?: string
-          id?: string
-          method?: string
-          phone?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      kyc_basic: {
-        Row: {
-          address: string
-          address_reference: string
-          birth_date: string | null
-          city: string
-          country: string
-          created_at: string
-          full_name: string
-          id: string
-          status: string
-          submitted_at: string | null
-          updated_at: string
-        }
-        Insert: {
-          address?: string
-          address_reference?: string
-          birth_date?: string | null
-          city?: string
-          country?: string
-          created_at?: string
-          full_name?: string
-          id: string
-          status?: string
-          submitted_at?: string | null
-          updated_at?: string
-        }
-        Update: {
-          address?: string
-          address_reference?: string
-          birth_date?: string | null
-          city?: string
-          country?: string
-          created_at?: string
-          full_name?: string
-          id?: string
-          status?: string
-          submitted_at?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
-          avatar_url: string | null
           created_at: string
           full_name: string
           id: string
@@ -145,7 +24,6 @@ export type Database = {
           username: string
         }
         Insert: {
-          avatar_url?: string | null
           created_at?: string
           full_name?: string
           id: string
@@ -154,7 +32,6 @@ export type Database = {
           username?: string
         }
         Update: {
-          avatar_url?: string | null
           created_at?: string
           full_name?: string
           id?: string
