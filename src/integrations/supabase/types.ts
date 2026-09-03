@@ -14,6 +14,169 @@ export type Database = {
   }
   public: {
     Tables: {
+      compliance_audit_log: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          id: string
+          new_level: Database["public"]["Enums"]["compliance_level"] | null
+          new_rate: number | null
+          previous_level: Database["public"]["Enums"]["compliance_level"] | null
+          previous_rate: number | null
+          reason: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          new_level?: Database["public"]["Enums"]["compliance_level"] | null
+          new_rate?: number | null
+          previous_level?:
+            | Database["public"]["Enums"]["compliance_level"]
+            | null
+          previous_rate?: number | null
+          reason?: string
+          source?: string
+          user_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          new_level?: Database["public"]["Enums"]["compliance_level"] | null
+          new_rate?: number | null
+          previous_level?:
+            | Database["public"]["Enums"]["compliance_level"]
+            | null
+          previous_rate?: number | null
+          reason?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      compliance_events: {
+        Row: {
+          created_at: string
+          days_late: number
+          description: string
+          event_type: Database["public"]["Enums"]["compliance_event_type"]
+          group_ref: string
+          id: string
+          occurred_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          days_late?: number
+          description?: string
+          event_type: Database["public"]["Enums"]["compliance_event_type"]
+          group_ref?: string
+          id?: string
+          occurred_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          days_late?: number
+          description?: string
+          event_type?: Database["public"]["Enums"]["compliance_event_type"]
+          group_ref?: string
+          id?: string
+          occurred_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      compliance_stats: {
+        Row: {
+          compliance_rate: number
+          created_at: string
+          cycles_completed: number
+          history_days: number
+          history_started_at: string
+          last_rate_change: number
+          late_count: number
+          level: Database["public"]["Enums"]["compliance_level"]
+          level_changed_at: string | null
+          missed_count: number
+          on_time_count: number
+          pending_obligations: number
+          recent_late_count: number
+          updated_at: string
+          user_id: string
+          violation_count: number
+        }
+        Insert: {
+          compliance_rate?: number
+          created_at?: string
+          cycles_completed?: number
+          history_days?: number
+          history_started_at?: string
+          last_rate_change?: number
+          late_count?: number
+          level?: Database["public"]["Enums"]["compliance_level"]
+          level_changed_at?: string | null
+          missed_count?: number
+          on_time_count?: number
+          pending_obligations?: number
+          recent_late_count?: number
+          updated_at?: string
+          user_id: string
+          violation_count?: number
+        }
+        Update: {
+          compliance_rate?: number
+          created_at?: string
+          cycles_completed?: number
+          history_days?: number
+          history_started_at?: string
+          last_rate_change?: number
+          late_count?: number
+          level?: Database["public"]["Enums"]["compliance_level"]
+          level_changed_at?: string | null
+          missed_count?: number
+          on_time_count?: number
+          pending_obligations?: number
+          recent_late_count?: number
+          updated_at?: string
+          user_id?: string
+          violation_count?: number
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          kind: string
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          read_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -41,15 +204,129 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      admin_override_compliance: {
+        Args: {
+          _new_level: Database["public"]["Enums"]["compliance_level"]
+          _new_rate: number
+          _reason: string
+          _user_id: string
+        }
+        Returns: {
+          compliance_rate: number
+          created_at: string
+          cycles_completed: number
+          history_days: number
+          history_started_at: string
+          last_rate_change: number
+          late_count: number
+          level: Database["public"]["Enums"]["compliance_level"]
+          level_changed_at: string | null
+          missed_count: number
+          on_time_count: number
+          pending_obligations: number
+          recent_late_count: number
+          updated_at: string
+          user_id: string
+          violation_count: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "compliance_stats"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      compliance_eligible_level: {
+        Args: {
+          _cycles: number
+          _history_days: number
+          _pending: number
+          _rate: number
+          _violations: number
+        }
+        Returns: Database["public"]["Enums"]["compliance_level"]
+      }
+      compliance_level_rank: {
+        Args: { _level: Database["public"]["Enums"]["compliance_level"] }
+        Returns: number
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      recalculate_compliance: {
+        Args: { _user_id: string }
+        Returns: {
+          compliance_rate: number
+          created_at: string
+          cycles_completed: number
+          history_days: number
+          history_started_at: string
+          last_rate_change: number
+          late_count: number
+          level: Database["public"]["Enums"]["compliance_level"]
+          level_changed_at: string | null
+          missed_count: number
+          on_time_count: number
+          pending_obligations: number
+          recent_late_count: number
+          updated_at: string
+          user_id: string
+          violation_count: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "compliance_stats"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
+      compliance_event_type:
+        | "payment_on_time"
+        | "payment_late"
+        | "payment_missed"
+        | "cycle_completed"
+        | "obligation_created"
+        | "obligation_resolved"
+        | "rule_violation"
+      compliance_level:
+        | "iniciante"
+        | "regular"
+        | "confiavel"
+        | "avancado"
+        | "excelente"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -176,6 +453,24 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+      compliance_event_type: [
+        "payment_on_time",
+        "payment_late",
+        "payment_missed",
+        "cycle_completed",
+        "obligation_created",
+        "obligation_resolved",
+        "rule_violation",
+      ],
+      compliance_level: [
+        "iniciante",
+        "regular",
+        "confiavel",
+        "avancado",
+        "excelente",
+      ],
+    },
   },
 } as const
