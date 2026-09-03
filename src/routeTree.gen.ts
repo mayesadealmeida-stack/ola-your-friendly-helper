@@ -11,11 +11,15 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AssistenteRouteImport } from './routes/assistente'
+import { Route as CarteiraRouteImport } from './routes/carteira'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as CarteiraIndexRouteImport } from './routes/carteira.index'
+import { Route as CarteiraDepositarRouteImport } from './routes/carteira.depositar'
 import { Route as PerfilIndexRouteImport } from './routes/perfil.index'
 import { Route as PerfilConfiguracoesRouteImport } from './routes/perfil.configuracoes'
 import { Route as PerfilKycRouteImport } from './routes/perfil.kyc'
+import { Route as CarteiraMetodoMethodRouteImport } from './routes/carteira.metodo.$method'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -27,6 +31,11 @@ const AssistenteRoute = AssistenteRouteImport.update({
   path: '/assistente',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CarteiraRoute = CarteiraRouteImport.update({
+  id: '/carteira',
+  path: '/carteira',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HomeRoute = HomeRouteImport.update({
   id: '/home',
   path: '/home',
@@ -36,6 +45,16 @@ const PerfilRoute = PerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
   getParentRoute: () => rootRouteImport,
+} as any)
+const CarteiraIndexRoute = CarteiraIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CarteiraRoute,
+} as any)
+const CarteiraDepositarRoute = CarteiraDepositarRouteImport.update({
+  id: '/depositar',
+  path: '/depositar',
+  getParentRoute: () => CarteiraRoute,
 } as any)
 const PerfilIndexRoute = PerfilIndexRouteImport.update({
   id: '/',
@@ -52,66 +71,94 @@ const PerfilKycRoute = PerfilKycRouteImport.update({
   path: '/kyc',
   getParentRoute: () => PerfilRoute,
 } as any)
+const CarteiraMetodoMethodRoute = CarteiraMetodoMethodRouteImport.update({
+  id: '/metodo/$method',
+  path: '/metodo/$method',
+  getParentRoute: () => CarteiraRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/assistente': typeof AssistenteRoute
+  '/carteira': typeof CarteiraRouteWithChildren
   '/home': typeof HomeRoute
   '/perfil': typeof PerfilRouteWithChildren
+  '/carteira/depositar': typeof CarteiraDepositarRoute
   '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
   '/perfil/kyc': typeof PerfilKycRoute
+  '/carteira/': typeof CarteiraIndexRoute
   '/perfil/': typeof PerfilIndexRoute
+  '/carteira/metodo/$method': typeof CarteiraMetodoMethodRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/assistente': typeof AssistenteRoute
   '/home': typeof HomeRoute
+  '/carteira/depositar': typeof CarteiraDepositarRoute
   '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
   '/perfil/kyc': typeof PerfilKycRoute
+  '/carteira': typeof CarteiraIndexRoute
   '/perfil': typeof PerfilIndexRoute
+  '/carteira/metodo/$method': typeof CarteiraMetodoMethodRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/assistente': typeof AssistenteRoute
+  '/carteira': typeof CarteiraRouteWithChildren
   '/home': typeof HomeRoute
   '/perfil': typeof PerfilRouteWithChildren
+  '/carteira/depositar': typeof CarteiraDepositarRoute
   '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
   '/perfil/kyc': typeof PerfilKycRoute
+  '/carteira/': typeof CarteiraIndexRoute
   '/perfil/': typeof PerfilIndexRoute
+  '/carteira/metodo/$method': typeof CarteiraMetodoMethodRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/assistente'
+    | '/carteira'
     | '/home'
     | '/perfil'
+    | '/carteira/depositar'
     | '/perfil/configuracoes'
     | '/perfil/kyc'
+    | '/carteira/'
     | '/perfil/'
+    | '/carteira/metodo/$method'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/assistente'
     | '/home'
+    | '/carteira/depositar'
     | '/perfil/configuracoes'
     | '/perfil/kyc'
+    | '/carteira'
     | '/perfil'
+    | '/carteira/metodo/$method'
   id:
     | '__root__'
     | '/'
     | '/assistente'
+    | '/carteira'
     | '/home'
     | '/perfil'
+    | '/carteira/depositar'
     | '/perfil/configuracoes'
     | '/perfil/kyc'
+    | '/carteira/'
     | '/perfil/'
+    | '/carteira/metodo/$method'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AssistenteRoute: typeof AssistenteRoute
+  CarteiraRoute: typeof CarteiraRouteWithChildren
   HomeRoute: typeof HomeRoute
   PerfilRoute: typeof PerfilRouteWithChildren
 }
@@ -132,6 +179,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AssistenteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/carteira': {
+      id: '/carteira'
+      path: '/carteira'
+      fullPath: '/carteira'
+      preLoaderRoute: typeof CarteiraRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/home': {
       id: '/home'
       path: '/home'
@@ -145,6 +199,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/perfil'
       preLoaderRoute: typeof PerfilRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/carteira/': {
+      id: '/carteira/'
+      path: '/'
+      fullPath: '/carteira/'
+      preLoaderRoute: typeof CarteiraIndexRouteImport
+      parentRoute: typeof CarteiraRoute
+    }
+    '/carteira/depositar': {
+      id: '/carteira/depositar'
+      path: '/depositar'
+      fullPath: '/carteira/depositar'
+      preLoaderRoute: typeof CarteiraDepositarRouteImport
+      parentRoute: typeof CarteiraRoute
     }
     '/perfil/': {
       id: '/perfil/'
@@ -167,8 +235,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PerfilKycRouteImport
       parentRoute: typeof PerfilRoute
     }
+    '/carteira/metodo/$method': {
+      id: '/carteira/metodo/$method'
+      path: '/metodo/$method'
+      fullPath: '/carteira/metodo/$method'
+      preLoaderRoute: typeof CarteiraMetodoMethodRouteImport
+      parentRoute: typeof CarteiraRoute
+    }
   }
 }
+
+interface CarteiraRouteChildren {
+  CarteiraDepositarRoute: typeof CarteiraDepositarRoute
+  CarteiraIndexRoute: typeof CarteiraIndexRoute
+  CarteiraMetodoMethodRoute: typeof CarteiraMetodoMethodRoute
+}
+
+const CarteiraRouteChildren: CarteiraRouteChildren = {
+  CarteiraDepositarRoute: CarteiraDepositarRoute,
+  CarteiraIndexRoute: CarteiraIndexRoute,
+  CarteiraMetodoMethodRoute: CarteiraMetodoMethodRoute,
+}
+
+const CarteiraRouteWithChildren = CarteiraRoute._addFileChildren(
+  CarteiraRouteChildren,
+)
 
 interface PerfilRouteChildren {
   PerfilConfiguracoesRoute: typeof PerfilConfiguracoesRoute
@@ -188,6 +279,7 @@ const PerfilRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AssistenteRoute: AssistenteRoute,
+  CarteiraRoute: CarteiraRouteWithChildren,
   HomeRoute: HomeRoute,
   PerfilRoute: PerfilRouteWithChildren,
 }

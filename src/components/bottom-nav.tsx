@@ -6,7 +6,7 @@ export type BottomNavKey = "home" | "grupos" | "carteira" | "notificacoes" | "pe
 const ITEMS: { key: BottomNavKey; icon: LucideIcon; label: string; to?: string }[] = [
   { key: "home", icon: HomeIcon, label: "Home", to: "/home" },
   { key: "grupos", icon: Users, label: "Grupos" },
-  { key: "carteira", icon: Wallet, label: "Carteira" },
+  { key: "carteira", icon: Wallet, label: "Carteira", to: "/carteira" },
   { key: "notificacoes", icon: Bell, label: "Notificações" },
   { key: "perfil", icon: User, label: "Perfil", to: "/perfil" },
 ];

@@ -21,6 +21,7 @@ import logo from "/logo-group-mobil.webp";
 import { BottomNav } from "@/components/bottom-nav";
 import { UserAvatarLink } from "@/components/user-avatar";
 import { useProfile } from "@/hooks/use-profile";
+import { useBalance } from "@/hooks/use-balance";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -52,11 +53,6 @@ function useGreetingPeriod() {
   if (hour < 12) return { label: "Bom dia", icon: Sun };
   if (hour < 18) return { label: "Boa tarde", icon: Sunset };
   return { label: "Boa noite", icon: Moon };
-}
-
-function useBalance() {
-  // TODO: ligar à tabela de saldo real no Supabase.
-  return { amountKz: 0, loading: false };
 }
 
 function useNotifications() {
@@ -209,42 +205,59 @@ function BalanceCard({
 function PrimaryActions() {
   return (
     <div className="grid grid-cols-2 gap-3">
-      <button className="flex items-center justify-center gap-2 rounded-2xl bg-brand-green py-4 font-display text-sm font-semibold text-primary-foreground shadow-md shadow-brand-green/25 transition hover:bg-brand-green-dark">
+      <Link
+        to="/carteira/depositar"
+        className="flex items-center justify-center gap-2 rounded-2xl bg-brand-green py-4 font-display text-sm font-semibold text-primary-foreground shadow-md shadow-brand-green/25 transition hover:bg-brand-green-dark"
+      >
         <Plus className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" /> Depositar
-      </button>
-      <button className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card py-4 font-display text-sm font-semibold text-card-foreground shadow-sm transition hover:bg-accent">
+      </Link>
+      <Link
+        to="/carteira"
+        className="flex items-center justify-center gap-2 rounded-2xl border border-border bg-card py-4 font-display text-sm font-semibold text-card-foreground shadow-sm transition hover:bg-accent"
+      >
         <ArrowUpRight className="h-4 w-4" strokeWidth={2.5} aria-hidden="true" /> Levantar
-      </button>
+      </Link>
     </div>
   );
 }
 
 function QuickActions() {
-  const actions: { icon: LucideIcon; label: string }[] = [
-    { icon: Send, label: "Transferir" },
+  const actions: { icon: LucideIcon; label: string; to?: string }[] = [
+    { icon: Send, label: "Transferir", to: "/carteira" },
     { icon: History, label: "Histórico" },
     { icon: ShieldCheck, label: "Segurança" },
-    { icon: HelpCircle, label: "Ajuda" },
+    { icon: HelpCircle, label: "Ajuda", to: "/assistente" },
   ];
 
   return (
     <section>
       <h2 className="mb-3 font-display text-sm font-semibold text-foreground">Mais ações</h2>
       <div className="grid grid-cols-2 gap-3">
-        {actions.map((action) => (
-          <button
-            key={action.label}
-            className="flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-4 text-left transition hover:bg-accent"
-          >
-            <span
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-brand-green-dark"
-              aria-hidden="true"
-            >
-              <action.icon className="h-4.5 w-4.5" strokeWidth={2} />
-            </span>
-            <span className="text-sm font-medium text-card-foreground">{action.label}</span>
-          </button>
-        ))}
+        {actions.map((action) => {
+          const content = (
+            <>
+              <span
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-brand-green-dark"
+                aria-hidden="true"
+              >
+                <action.icon className="h-4.5 w-4.5" strokeWidth={2} />
+              </span>
+              <span className="text-sm font-medium text-card-foreground">{action.label}</span>
+            </>
+          );
+          const className =
+            "flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-4 text-left transition hover:bg-accent";
+
+          return action.to ? (
+            <Link key={action.label} to={action.to} className={className}>
+              {content}
+            </Link>
+          ) : (
+            <button key={action.label} type="button" className={className}>
+              {content}
+            </button>
+          );
+        })}
       </div>
     </section>
   );
