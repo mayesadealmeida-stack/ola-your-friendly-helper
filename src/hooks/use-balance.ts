@@ -1,4 +1,7 @@
+import { useWallet } from "@/hooks/use-wallet";
+
+/** Saldo real da carteira — soma dos movimentos confirmados. */
 export function useBalance() {
-  // TODO: ligar à tabela de saldo real no Supabase.
-  return { amountKz: 0, loading: false };
+  const { balance, loading } = useWallet();
+  return { amountKz: balance, loading };
 }

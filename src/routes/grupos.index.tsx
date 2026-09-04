@@ -1,17 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Search, Plus, Lock, Users2, X } from "lucide-react";
+import { Search, Plus, Lock, Users2, X, Loader2 } from "lucide-react";
 import { useCompliance } from "@/hooks/use-compliance";
+import { useGroups } from "@/hooks/use-groups";
 import { LEVEL_META, LEVEL_ORDER, type ComplianceLevel } from "@/lib/compliance";
-import {
-  MOCK_GROUPS,
-  vacancies,
-  groupDisplayStatus,
-  nextRoundDate,
-  formatKz,
-  formatDate,
-  type GroupDef,
-} from "@/lib/groups-mock";
+import { vacancies, levelAllows, formatKz, type Group } from "@/lib/groups";
 import { BottomNav } from "@/components/bottom-nav";
 
 export const Route = createFileRoute("/grupos/")({
@@ -31,12 +24,9 @@ const FILTERS: { key: FilterKey; label: string }[] = [
   { key: "poucas_vagas", label: "Poucas vagas" },
 ];
 
-function levelAllows(userLevel: ComplianceLevel, minLevel: ComplianceLevel): boolean {
-  return LEVEL_ORDER.indexOf(userLevel) >= LEVEL_ORDER.indexOf(minLevel);
-}
-
 function GruposPage() {
   const { stats } = useCompliance();
+  const { groups, loading } = useGroups();
   const userLevel: ComplianceLevel = stats?.level ?? "iniciante";
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<FilterKey>("todos");
@@ -46,7 +36,7 @@ function GruposPage() {
 
   const filteredGroups = useMemo(() => {
     const query = search.trim().toLowerCase();
-    return MOCK_GROUPS.filter((group) => {
+    return groups.filter((group) => {
       const matchesSearch =
         !query ||
         group.name.toLowerCase().includes(query) ||
@@ -55,14 +45,17 @@ function GruposPage() {
 
       if (filter === "mensal") return group.frequency === "mensal";
       if (filter === "semanal") return group.frequency === "semanal";
-      if (filter === "poucas_vagas") return vacancies(group) <= 5 && vacancies(group) > 0;
+      if (filter === "poucas_vagas") {
+        const v = vacancies(group);
+        return v > 0 && v <= 5;
+      }
       if (filter === "proximos") {
-        const daysUntil = (nextRoundDate(group).getTime() - Date.now()) / 86_400_000;
+        const daysUntil = (new Date(group.start_date).getTime() - Date.now()) / 86_400_000;
         return daysUntil >= 0 && daysUntil <= 14;
       }
       return true;
     });
-  }, [search, filter]);
+  }, [groups, search, filter]);
 
   return (
     <div className="min-h-screen bg-secondary/40 pb-28">
@@ -116,18 +109,27 @@ function GruposPage() {
         </div>
 
         <main className="space-y-4 px-5 py-5">
-          {filteredGroups.length === 0 ? (
+          {loading && (
+            <div className="flex justify-center py-10">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden="true" />
+            </div>
+          )}
+
+          {!loading && filteredGroups.length === 0 && (
             <div className="rounded-2xl border border-dashed border-border bg-card px-5 py-10 text-center">
               <Users2 className="mx-auto h-6 w-6 text-muted-foreground" aria-hidden="true" />
               <p className="mt-3 text-sm text-muted-foreground">
-                Nenhum grupo encontrado com esses filtros.
+                {groups.length === 0
+                  ? "Ainda não há grupos disponíveis."
+                  : "Nenhum grupo encontrado com esses filtros."}
               </p>
             </div>
-          ) : (
+          )}
+
+          {!loading &&
             filteredGroups.map((group) => (
               <GroupCard key={group.id} group={group} userLevel={userLevel} />
-            ))
-          )}
+            ))}
         </main>
       </div>
 
@@ -149,7 +151,11 @@ function CreateGroupButton({
 }) {
   if (canCreate) {
     return (
-      <button className="flex items-center gap-1.5 rounded-full bg-brand-green px-3.5 py-2 text-xs font-semibold text-primary-foreground transition hover:bg-brand-green-dark">
+      <button
+        disabled
+        title="Por agora, novos grupos são publicados pela equipa Group Mobil."
+        className="flex items-center gap-1.5 rounded-full bg-brand-green px-3.5 py-2 text-xs font-semibold text-primary-foreground opacity-90"
+      >
         <Plus className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
         Criar grupo
       </button>
@@ -208,48 +214,41 @@ function BlockedLevelDialog({ level, onClose }: { level: ComplianceLevel; onClos
   );
 }
 
-function GroupCard({ group, userLevel }: { group: GroupDef; userLevel: ComplianceLevel }) {
-  const current = group.participantsCurrent;
+function GroupCard({ group, userLevel }: { group: Group; userLevel: ComplianceLevel }) {
   const remaining = vacancies(group);
-  const status = groupDisplayStatus(group, current);
-  const eligible = levelAllows(userLevel, group.minLevel);
+  const eligible = levelAllows(userLevel, group.min_level);
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
       <div className="flex items-start justify-between">
         <p className="font-display text-base font-semibold text-card-foreground">{group.name}</p>
-        <StatusChip status={status} />
+        <StatusChip status={group.status} />
       </div>
 
       <div className="mt-2 flex items-center gap-2 text-sm">
         <span className="text-muted-foreground">
-          {current}/{group.participantsMax} participantes
+          {group.participants_current}/{group.participants_max} participantes
         </span>
-        <VacancyChip remaining={remaining} full={status === "completo"} />
+        <VacancyChip remaining={remaining} full={group.status === "completo"} />
       </div>
 
       <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2.5 text-sm">
-        <Row label="💰 Valor de entrada" value={formatKz(group.entryFee)} />
+        <Row label="💰 Valor de entrada" value={formatKz(group.entry_fee)} />
         <Row label="🔄 Contribuição" value={formatKz(group.contribution)} />
         <Row label="📅 Frequência" value={group.frequency === "semanal" ? "Semanal" : "Mensal"} />
-        <Row label="⏳ Duração" value={group.durationLabel} />
-        <Row label="🎁 Recebimento por rodada" value={formatKz(group.roundAmount)} />
+        <Row label="🎁 Recebimento por rodada" value={formatKz(group.round_amount)} />
         <Row
           label="👥 Beneficiários por rodada"
-          value={`${group.beneficiariesPerRound} pessoa(s)`}
+          value={`${group.beneficiaries_per_round} pessoa(s)`}
         />
+        <Row label="📅 Início" value={new Date(group.start_date).toLocaleDateString("pt-AO")} />
       </dl>
-
-      <p className="mt-3 text-sm text-muted-foreground">
-        📅 Próxima rodada:{" "}
-        <span className="text-card-foreground">{formatDate(nextRoundDate(group))}</span>
-      </p>
 
       <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
         <span
           className={`text-xs font-medium ${eligible ? "text-muted-foreground" : "text-destructive"}`}
         >
-          Nível mínimo: {LEVEL_META[group.minLevel].label}
+          Nível mínimo: {LEVEL_META[group.min_level].label}
         </span>
       </div>
 
@@ -273,7 +272,7 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function StatusChip({ status }: { status: GroupDef["status"] | "completo" }) {
+function StatusChip({ status }: { status: Group["status"] }) {
   if (status === "completo") {
     return (
       <span className="rounded-full bg-destructive/10 px-2.5 py-1 text-[11px] font-semibold text-destructive">
@@ -285,6 +284,13 @@ function StatusChip({ status }: { status: GroupDef["status"] | "completo" }) {
     return (
       <span className="rounded-full bg-orange-500/10 px-2.5 py-1 text-[11px] font-semibold text-orange-600">
         🟠 Em andamento
+      </span>
+    );
+  }
+  if (status === "encerrado") {
+    return (
+      <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+        Encerrado
       </span>
     );
   }
