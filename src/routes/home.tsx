@@ -1,33 +1,30 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  Sun,
-  Sunset,
-  Moon,
   Bell,
-  Eye,
-  EyeOff,
-  Send,
-  History,
-  ShieldCheck,
-  HelpCircle,
+  Plus,
+  ArrowUpRight,
+  ArrowDownLeft,
+  ArrowUpLeft,
+  Briefcase,
+  Users,
   BadgeCheck,
+  HelpCircle,
   CheckCircle2,
   ThumbsUp,
   MessageCircle,
   Share2,
-  LayoutGrid,
-  ArrowUpRight,
-  ArrowDownLeft,
-  ArrowUpLeft,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
 import { UserAvatarLink } from "@/components/user-avatar";
 import { useProfile } from "@/hooks/use-profile";
-import { useBalance } from "@/hooks/use-balance";
+import { useWallet } from "@/hooks/use-wallet";
 import { useKyc } from "@/hooks/use-kyc";
 import { usePosts, relativeTime, type Post, type PostCategory } from "@/hooks/use-posts";
+import logo from "/logo-group-mobil.webp";
+import logoMark from "/logo-group-mobil-mark.webp";
 
 export const Route = createFileRoute("/home")({
   head: () => ({
@@ -43,23 +40,6 @@ export const Route = createFileRoute("/home")({
 });
 
 // ---------------------------------------------------------------------------
-// Data hooks — return empty/zero state until wired to Supabase.
-// Replace the bodies of these with real Supabase queries; the UI below
-// already handles loading, empty and populated states.
-// ---------------------------------------------------------------------------
-
-function useGreetingPeriod() {
-  const [hour, setHour] = useState(() => new Date().getHours());
-
-  useEffect(() => {
-    const id = setInterval(() => setHour(new Date().getHours()), 60_000);
-    return () => clearInterval(id);
-  }, []);
-
-  if (hour < 12) return { label: "Bom dia", icon: Sun };
-  if (hour < 18) return { label: "Boa tarde", icon: Sunset };
-  return { label: "Boa noite", icon: Moon };
-}
 
 function useNotifications() {
   // TODO: ligar à tabela de notificações real no Supabase.
@@ -84,15 +64,18 @@ type FeedFilter = "todos" | PostCategory;
 // ---------------------------------------------------------------------------
 
 function HomePage() {
-  const greeting = useGreetingPeriod();
   const { profile } = useProfile();
   const userName = profile?.full_name?.trim() || null;
-  const balance = useBalance();
+  const wallet = useWallet();
   const notifications = useNotifications();
   const recent = useRecentMovements();
   const feed = usePosts();
-  const [showBalance, setShowBalance] = useState(true);
   const [activeCategory, setActiveCategory] = useState<FeedFilter>("todos");
+
+  // Saldo de depósito = pedidos de depósito ainda por confirmar.
+  const pendingDepositKz = wallet.transactions
+    .filter((t) => t.status === "pendente" && t.type === "deposito")
+    .reduce((sum, t) => sum + Number(t.amount), 0);
 
   const filteredPosts =
     activeCategory === "todos"
@@ -102,23 +85,22 @@ function HomePage() {
   return (
     <div className="min-h-screen bg-secondary/40 pb-28">
       <div className="mx-auto max-w-md">
-        <Header
-          greetingLabel={greeting.label}
-          greetingIcon={greeting.icon}
-          userName={userName}
-          unreadCount={notifications.unreadCount}
-        />
+        <TopBar unreadCount={notifications.unreadCount} />
 
-        <main className="-mt-6 space-y-6 px-5">
-          <BalanceCard
-            amountKz={balance.amountKz}
-            visible={showBalance}
-            onToggleVisible={() => setShowBalance((v) => !v)}
+        <HeroBanner />
+
+        <main className="-mt-8 space-y-6 px-5">
+          <RechargeWithdrawButtons />
+
+          <WalletCard
+            depositKz={pendingDepositKz}
+            availableKz={wallet.balance}
+            loading={wallet.loading}
           />
 
-          <PromoCarousel />
+          <ShortcutsRow />
 
-          <QuickActions />
+          <PromoBanner />
 
           <RecentMovements movements={recent.movements} />
 
@@ -135,130 +117,119 @@ function HomePage() {
   );
 }
 
-function Header({
-  greetingLabel,
-  greetingIcon: GreetingIcon,
-  userName,
-  unreadCount,
-}: {
-  greetingLabel: string;
-  greetingIcon: LucideIcon;
-  userName: string | null;
-  unreadCount: number;
-}) {
+function TopBar({ unreadCount }: { unreadCount: number }) {
   return (
-    <header
-      className="px-5 pb-14 pt-8"
-      style={{
-        background:
-          "radial-gradient(120% 140% at 82% 0%, oklch(0.3 0.09 261.5) 0%, oklch(0.208 0.078 262.1) 60%)",
-      }}
-    >
-      <div className="mx-auto flex max-w-md items-start justify-between">
-        <div>
-          <p className="flex items-center gap-2 font-display text-xl font-semibold text-white">
-            <GreetingIcon
-              className="h-5 w-5 text-brand-green"
-              strokeWidth={2.25}
-              aria-hidden="true"
-            />
-            {greetingLabel}
-            {userName ? `, ${userName}!` : "!"}
-          </p>
-          <p className="mt-1 text-sm text-white/55">Que bom ter você de volta.</p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            aria-label="Notificações"
-            className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/15"
-          >
-            <Bell className="h-4.5 w-4.5" strokeWidth={2} aria-hidden="true" />
-            {unreadCount > 0 && (
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-brand-green ring-2 ring-navy-900" />
-            )}
-          </button>
-          <UserAvatarLink size={40} />
-        </div>
-      </div>
+    <header className="flex items-center gap-3 bg-navy-900 px-5 py-3.5">
+      <img src={logoMark} alt="" aria-hidden="true" className="h-8 w-8 shrink-0" />
+      <p className="flex-1 truncate font-display text-base font-semibold text-white">Group Mobil</p>
+      <button
+        aria-label="Notificações"
+        className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/90 transition hover:bg-white/10"
+      >
+        <Bell className="h-5 w-5" strokeWidth={1.9} aria-hidden="true" />
+        {unreadCount > 0 && (
+          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-brand-green ring-2 ring-navy-900" />
+        )}
+      </button>
+      <UserAvatarLink size={32} />
     </header>
   );
 }
 
-type BalanceAction = { icon: LucideIcon; label: string; to?: string; href?: string };
+function HeroBanner() {
+  return (
+    <div
+      className="relative flex h-44 items-center justify-center overflow-hidden bg-navy-900 px-6 pb-10"
+      style={{
+        background:
+          "radial-gradient(120% 140% at 50% -10%, oklch(0.3 0.09 261.5) 0%, oklch(0.18 0.05 261.5) 70%)",
+      }}
+    >
+      <img src={logo} alt="Group Mobil" className="h-10 w-auto opacity-95 sm:h-12" />
+    </div>
+  );
+}
 
-const BALANCE_ACTIONS: BalanceAction[] = [
-  { icon: Send, label: "Transferir", to: "/carteira" },
-  { icon: ArrowUpRight, label: "Levantar", to: "/carteira" },
-  { icon: History, label: "Extrato", href: "#movimentacoes" },
-  { icon: LayoutGrid, label: "Mais", to: "/carteira" },
-];
+function RechargeWithdrawButtons() {
+  return (
+    <section className="grid grid-cols-2 gap-3">
+      <Link
+        to="/carteira/depositar"
+        className="flex items-center justify-center gap-2 rounded-2xl bg-navy-900 py-4 font-display text-sm font-semibold text-white shadow-md shadow-navy-900/20 transition hover:bg-navy-800"
+      >
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-green text-navy-900">
+          <Plus className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />
+        </span>
+        Recarregar
+      </Link>
+      <Link
+        to="/carteira"
+        className="flex items-center justify-center gap-2 rounded-2xl bg-navy-900 py-4 font-display text-sm font-semibold text-white shadow-md shadow-navy-900/20 transition hover:bg-navy-800"
+      >
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-green text-navy-900">
+          <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={3} aria-hidden="true" />
+        </span>
+        Retirar
+      </Link>
+    </section>
+  );
+}
 
-function BalanceCard({
-  amountKz,
-  visible,
-  onToggleVisible,
+function WalletCard({
+  depositKz,
+  availableKz,
+  loading,
 }: {
-  amountKz: number;
-  visible: boolean;
-  onToggleVisible: () => void;
+  depositKz: number;
+  availableKz: number;
+  loading: boolean;
 }) {
-  const formatted = new Intl.NumberFormat("pt-AO", { maximumFractionDigits: 0 }).format(amountKz);
+  const fmt = (n: number) => new Intl.NumberFormat("pt-AO", { maximumFractionDigits: 0 }).format(n);
 
   return (
-    <section className="rounded-3xl bg-card p-6 shadow-xl shadow-navy-900/10">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <button
-            onClick={onToggleVisible}
-            aria-label={visible ? "Ocultar saldo" : "Mostrar saldo"}
-            className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground"
-          >
-            Saldo disponível
-            {visible ? (
-              <Eye className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-            ) : (
-              <EyeOff className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-            )}
-          </button>
-          <p className="mt-2 font-display text-4xl font-bold tracking-tight text-card-foreground">
-            {visible ? `${formatted} Kz` : "•••••• Kz"}
+    <section className="rounded-2xl bg-navy-900 p-5 text-white shadow-md shadow-navy-900/20">
+      <p className="flex items-center gap-2 text-sm font-semibold">
+        <Briefcase className="h-4 w-4 text-brand-green" strokeWidth={2.25} aria-hidden="true" />
+        Carteira
+      </p>
+
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <div className="rounded-xl bg-white/10 p-3.5">
+          <p className="text-xs text-white/55">Saldo de Depósito</p>
+          <p className="mt-1 font-display text-lg font-bold">
+            {loading ? "…" : `Kz ${fmt(depositKz)}`}
           </p>
         </div>
+        <div className="rounded-xl bg-white/10 p-3.5">
+          <p className="text-xs text-white/55">Saldo Disponível</p>
+          <p className="mt-1 font-display text-lg font-bold">
+            {loading ? "…" : `Kz ${fmt(availableKz)}`}
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
 
+function ShortcutsRow() {
+  const items: { icon: LucideIcon; label: string; to: string }[] = [
+    { icon: Users, label: "Grupos", to: "/grupos" },
+    { icon: BadgeCheck, label: "Verificação", to: "/perfil/kyc" },
+    { icon: HelpCircle, label: "Suporte", to: "/assistente" },
+  ];
+
+  return (
+    <section className="grid grid-cols-3 gap-3">
+      {items.map((item) => (
         <Link
-          to="/carteira/depositar"
-          className="shrink-0 rounded-full bg-brand-green px-5 py-3 font-display text-sm font-semibold text-primary-foreground shadow-md shadow-brand-green/25 transition hover:bg-brand-green-dark"
+          key={item.label}
+          to={item.to}
+          className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card py-4 text-center transition hover:bg-accent"
         >
-          Depositar
+          <item.icon className="h-5 w-5 text-navy-900" strokeWidth={1.9} aria-hidden="true" />
+          <span className="text-xs font-medium text-card-foreground">{item.label}</span>
         </Link>
-      </div>
-
-      <div className="mt-6 grid grid-cols-4 gap-2">
-        {BALANCE_ACTIONS.map((action) => {
-          const content = (
-            <>
-              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-secondary text-foreground transition group-hover:bg-accent">
-                <action.icon className="h-4.5 w-4.5" strokeWidth={2} aria-hidden="true" />
-              </span>
-              <span className="text-center text-[11px] font-medium text-muted-foreground">
-                {action.label}
-              </span>
-            </>
-          );
-          const className = "group flex flex-col items-center gap-1.5";
-
-          return action.to ? (
-            <Link key={action.label} to={action.to} className={className}>
-              {content}
-            </Link>
-          ) : (
-            <a key={action.label} href={action.href} className={className}>
-              {content}
-            </a>
-          );
-        })}
-      </div>
+      ))}
     </section>
   );
 }
@@ -271,7 +242,7 @@ type PromoSlide = {
   cta?: { label: string; to: string };
 };
 
-function PromoCarousel() {
+function PromoBanner() {
   const { kyc, loading } = useKyc();
   const [index, setIndex] = useState(0);
 
@@ -335,48 +306,6 @@ function PromoCarousel() {
           ))}
         </div>
       )}
-    </section>
-  );
-}
-
-function QuickActions() {
-  const actions: { icon: LucideIcon; label: string; to?: string; href?: string }[] = [
-    { icon: History, label: "Histórico", href: "#movimentacoes" },
-    { icon: BadgeCheck, label: "KYC Basic", to: "/perfil/kyc" },
-    { icon: ShieldCheck, label: "Segurança", to: "/perfil/configuracoes" },
-    { icon: HelpCircle, label: "Ajuda", to: "/assistente" },
-  ];
-
-  return (
-    <section>
-      <h2 className="mb-3 font-display text-sm font-semibold text-foreground">Mais ações</h2>
-      <div className="grid grid-cols-2 gap-3">
-        {actions.map((action) => {
-          const content = (
-            <>
-              <span
-                className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-brand-green-dark"
-                aria-hidden="true"
-              >
-                <action.icon className="h-4.5 w-4.5" strokeWidth={2} />
-              </span>
-              <span className="text-sm font-medium text-card-foreground">{action.label}</span>
-            </>
-          );
-          const className =
-            "flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-4 text-left transition hover:bg-accent";
-
-          return action.to ? (
-            <Link key={action.label} to={action.to} className={className}>
-              {content}
-            </Link>
-          ) : (
-            <a key={action.label} href={action.href} className={className}>
-              {content}
-            </a>
-          );
-        })}
-      </div>
     </section>
   );
 }
