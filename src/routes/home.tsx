@@ -89,7 +89,7 @@ function HomePage() {
 
         <HeroBanner />
 
-        <main className="-mt-8 space-y-6 px-5">
+        <main className="space-y-6 px-5 pt-5">
           <RechargeWithdrawButtons />
 
           <WalletCard
@@ -139,7 +139,7 @@ function TopBar({ unreadCount }: { unreadCount: number }) {
 function HeroBanner() {
   return (
     <div
-      className="relative flex h-44 items-center justify-center overflow-hidden bg-navy-900 px-6 pb-10"
+      className="relative flex h-40 items-center justify-center overflow-hidden bg-navy-900 px-6"
       style={{
         background:
           "radial-gradient(120% 140% at 50% -10%, oklch(0.3 0.09 261.5) 0%, oklch(0.18 0.05 261.5) 70%)",
