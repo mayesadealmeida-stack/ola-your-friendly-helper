@@ -1,0 +1,23 @@
+revoke execute on function public.get_wallet_balance(uuid) from anon, public;
+revoke execute on function public.request_deposit(numeric, public.payment_method_key, text) from anon, public;
+revoke execute on function public.request_withdrawal(numeric, public.payment_method_key, text) from anon, public;
+revoke execute on function public.contribute_from_wallet(uuid) from anon, public;
+revoke execute on function public.admin_review_transaction(uuid, boolean, text) from anon, public;
+revoke execute on function public.admin_finance_summary() from anon, public;
+revoke execute on function public.join_group(uuid) from anon, public;
+revoke execute on function public.mark_contribution_paid(uuid, public.payment_method_key) from anon, public;
+revoke execute on function public.admin_override_compliance(uuid, numeric, public.compliance_level, text) from anon, public;
+revoke execute on function public.generate_group_rounds(uuid) from anon, public;
+revoke execute on function public.recalculate_compliance(uuid) from anon, public;
+revoke execute on function public.has_role(uuid, public.app_role) from anon, public;
+
+grant execute on function public.get_wallet_balance(uuid) to authenticated;
+grant execute on function public.request_deposit(numeric, public.payment_method_key, text) to authenticated;
+grant execute on function public.request_withdrawal(numeric, public.payment_method_key, text) to authenticated;
+grant execute on function public.contribute_from_wallet(uuid) to authenticated;
+grant execute on function public.admin_review_transaction(uuid, boolean, text) to authenticated;
+grant execute on function public.admin_finance_summary() to authenticated;
+grant execute on function public.join_group(uuid) to authenticated;
+grant execute on function public.mark_contribution_paid(uuid, public.payment_method_key) to authenticated;
+grant execute on function public.admin_override_compliance(uuid, numeric, public.compliance_level, text) to authenticated;
+grant execute on function public.has_role(uuid, public.app_role) to authenticated;
