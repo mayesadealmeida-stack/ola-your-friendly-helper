@@ -5,6 +5,7 @@ import {
   Camera,
   Check,
   Copy,
+  Download,
   HelpCircle,
   Loader2,
   LogOut,
@@ -21,6 +22,7 @@ import { useCompliance } from "@/hooks/use-compliance";
 import { useWallet } from "@/hooks/use-wallet";
 import { LEVEL_META } from "@/lib/compliance";
 import { BottomNav } from "@/components/bottom-nav";
+import { useInstallPrompt } from "@/hooks/use-install-prompt";
 
 export const Route = createFileRoute("/perfil/")({
   head: () => ({
@@ -247,6 +249,8 @@ function PerfilPage() {
             </div>
           </section>
 
+          <InstallAppCard />
+
           <button
             type="button"
             onClick={handleLogout}
@@ -283,6 +287,51 @@ function kycBadge(status: string | undefined): MenuBadge {
     default:
       return { text: kycStatusLabel("not_started"), tone: "muted" };
   }
+}
+
+function InstallAppCard() {
+  const { canInstall, installed, promptInstall } = useInstallPrompt();
+  const [showIosHelp, setShowIosHelp] = useState(false);
+
+  if (installed) {
+    return (
+      <section className="flex items-center gap-3 rounded-2xl border border-border bg-card px-5 py-4">
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-green/15 text-brand-green-dark">
+          <Check className="h-4.5 w-4.5" aria-hidden="true" />
+        </span>
+        <p className="text-sm font-medium text-card-foreground">
+          Aplicação já instalada neste dispositivo
+        </p>
+      </section>
+    );
+  }
+
+  async function handleClick() {
+    if (canInstall) {
+      await promptInstall();
+      return;
+    }
+    setShowIosHelp((v) => !v);
+  }
+
+  return (
+    <section className="overflow-hidden rounded-2xl bg-navy-900 text-white">
+      <button
+        type="button"
+        onClick={handleClick}
+        className="flex w-full items-center justify-center gap-2 px-5 py-4 font-display text-sm font-semibold transition hover:bg-navy-800"
+      >
+        <Download className="h-4.5 w-4.5" aria-hidden="true" />
+        Instalar aplicação
+      </button>
+      {showIosHelp && (
+        <div className="border-t border-white/10 px-5 py-4 text-xs leading-relaxed text-white/70">
+          No iPhone: toque em <strong className="text-white">Partilhar</strong> na barra do Safari e
+          depois em <strong className="text-white">"Adicionar ao ecrã principal"</strong>.
+        </div>
+      )}
+    </section>
+  );
 }
 
 function AccountTile({

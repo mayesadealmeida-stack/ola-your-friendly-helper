@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="pt-AO">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Group Mobil — Sem ligação</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+        background: #03153b;
+        color: #ffffff;
+      }
+      .wrap {
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 32px;
+      }
+      img {
+        width: 72px;
+        height: 72px;
+        border-radius: 20px;
+        margin-bottom: 20px;
+      }
+      h1 {
+        font-size: 18px;
+        margin: 0 0 8px;
+      }
+      p {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.6);
+        margin: 0 0 24px;
+        max-width: 320px;
+      }
+      button {
+        border: none;
+        border-radius: 999px;
+        background: #22c55e;
+        color: #03153b;
+        font-weight: 700;
+        font-size: 14px;
+        padding: 12px 24px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <img src="/icon-192.png" alt="Group Mobil" />
+      <h1>Sem ligação à internet</h1>
+      <p>Verifique a sua ligação de dados ou Wi-Fi e tente novamente.</p>
+      <button onclick="location.reload()">Tentar novamente</button>
+    </div>
+  </body>
+</html>
