@@ -5,9 +5,7 @@ import {
   Camera,
   Check,
   Copy,
-  CreditCard,
   HelpCircle,
-  History,
   Loader2,
   LogOut,
   Settings,
@@ -205,21 +203,6 @@ function PerfilPage() {
         </header>
 
         <main className="space-y-6 px-5 pt-6">
-          <section className="grid grid-cols-2 gap-3">
-            <Link
-              to="/carteira/depositar"
-              className="rounded-2xl bg-navy-900 py-3.5 text-center font-display text-sm font-semibold text-white shadow-sm transition hover:bg-navy-800"
-            >
-              Recarregar
-            </Link>
-            <Link
-              to="/carteira"
-              className="rounded-2xl border border-border bg-card py-3.5 text-center font-display text-sm font-semibold text-card-foreground shadow-sm transition hover:bg-accent"
-            >
-              Retirar
-            </Link>
-          </section>
-
           <section>
             <h2 className="mb-3 font-display text-sm font-semibold text-foreground">Minha conta</h2>
             <div className="grid grid-cols-3 gap-3">
@@ -229,8 +212,6 @@ function PerfilPage() {
                 to="/perfil/kyc"
                 badge={kycBadge(kyc?.status)}
               />
-              <AccountTile icon={CreditCard} label="Carteira" to="/carteira" />
-              <AccountTile icon={History} label="Transações" to="/carteira" />
               <AccountTile icon={TrendingUp} label="Nível" to="/nivel" />
               <AccountTile icon={Settings} label="Configurações" to="/perfil/configuracoes" />
               <AccountTile icon={HelpCircle} label="Ajuda" to="/assistente" />
