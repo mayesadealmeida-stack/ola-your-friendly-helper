@@ -214,7 +214,7 @@ function PerfilPage() {
               to="/perfil/pagamento"
               className="rounded-2xl border border-border bg-card py-3.5 text-center font-display text-sm font-semibold text-card-foreground shadow-sm transition hover:bg-accent"
             >
-              Pagamento
+              Retirar
             </Link>
           </section>
 
