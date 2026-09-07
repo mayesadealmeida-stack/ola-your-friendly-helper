@@ -203,6 +203,13 @@ function PerfilPage() {
         </header>
 
         <main className="space-y-6 px-5 pt-6">
+          <Link
+            to="/perfil/depositar"
+            className="block w-full rounded-2xl bg-navy-900 py-3.5 text-center font-display text-sm font-semibold text-white shadow-sm transition hover:bg-navy-800"
+          >
+            Recarregar
+          </Link>
+
           <section>
             <h2 className="mb-3 font-display text-sm font-semibold text-foreground">Minha conta</h2>
             <div className="grid grid-cols-3 gap-3">

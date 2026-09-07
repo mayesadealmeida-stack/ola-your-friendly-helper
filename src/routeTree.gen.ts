@@ -20,6 +20,7 @@ import { Route as GruposIndexRouteImport } from './routes/grupos.index'
 import { Route as GruposGroupIdRouteImport } from './routes/grupos.$groupId'
 import { Route as PerfilIndexRouteImport } from './routes/perfil.index'
 import { Route as PerfilConfiguracoesRouteImport } from './routes/perfil.configuracoes'
+import { Route as PerfilDepositarRouteImport } from './routes/perfil.depositar'
 import { Route as PerfilKycRouteImport } from './routes/perfil.kyc'
 
 const IndexRoute = IndexRouteImport.update({
@@ -77,6 +78,11 @@ const PerfilConfiguracoesRoute = PerfilConfiguracoesRouteImport.update({
   path: '/configuracoes',
   getParentRoute: () => PerfilRoute,
 } as any)
+const PerfilDepositarRoute = PerfilDepositarRouteImport.update({
+  id: '/depositar',
+  path: '/depositar',
+  getParentRoute: () => PerfilRoute,
+} as any)
 const PerfilKycRoute = PerfilKycRouteImport.update({
   id: '/kyc',
   path: '/kyc',
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/perfil': typeof PerfilRouteWithChildren
   '/grupos/$groupId': typeof GruposGroupIdRoute
   '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
+  '/perfil/depositar': typeof PerfilDepositarRoute
   '/perfil/kyc': typeof PerfilKycRoute
   '/grupos/': typeof GruposIndexRoute
   '/perfil/': typeof PerfilIndexRoute
@@ -105,6 +112,7 @@ export interface FileRoutesByTo {
   '/nivel': typeof NivelRoute
   '/grupos/$groupId': typeof GruposGroupIdRoute
   '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
+  '/perfil/depositar': typeof PerfilDepositarRoute
   '/perfil/kyc': typeof PerfilKycRoute
   '/grupos': typeof GruposIndexRoute
   '/perfil': typeof PerfilIndexRoute
@@ -120,6 +128,7 @@ export interface FileRoutesById {
   '/perfil': typeof PerfilRouteWithChildren
   '/grupos/$groupId': typeof GruposGroupIdRoute
   '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
+  '/perfil/depositar': typeof PerfilDepositarRoute
   '/perfil/kyc': typeof PerfilKycRoute
   '/grupos/': typeof GruposIndexRoute
   '/perfil/': typeof PerfilIndexRoute
@@ -136,6 +145,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/grupos/$groupId'
     | '/perfil/configuracoes'
+    | '/perfil/depositar'
     | '/perfil/kyc'
     | '/grupos/'
     | '/perfil/'
@@ -148,6 +158,7 @@ export interface FileRouteTypes {
     | '/nivel'
     | '/grupos/$groupId'
     | '/perfil/configuracoes'
+    | '/perfil/depositar'
     | '/perfil/kyc'
     | '/grupos'
     | '/perfil'
@@ -162,6 +173,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/grupos/$groupId'
     | '/perfil/configuracoes'
+    | '/perfil/depositar'
     | '/perfil/kyc'
     | '/grupos/'
     | '/perfil/'
@@ -256,6 +268,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PerfilConfiguracoesRouteImport
       parentRoute: typeof PerfilRoute
     }
+    '/perfil/depositar': {
+      id: '/perfil/depositar'
+      path: '/depositar'
+      fullPath: '/perfil/depositar'
+      preLoaderRoute: typeof PerfilDepositarRouteImport
+      parentRoute: typeof PerfilRoute
+    }
     '/perfil/kyc': {
       id: '/perfil/kyc'
       path: '/kyc'
@@ -281,12 +300,14 @@ const GruposRouteWithChildren =
 
 interface PerfilRouteChildren {
   PerfilConfiguracoesRoute: typeof PerfilConfiguracoesRoute
+  PerfilDepositarRoute: typeof PerfilDepositarRoute
   PerfilKycRoute: typeof PerfilKycRoute
   PerfilIndexRoute: typeof PerfilIndexRoute
 }
 
 const PerfilRouteChildren: PerfilRouteChildren = {
   PerfilConfiguracoesRoute: PerfilConfiguracoesRoute,
+  PerfilDepositarRoute: PerfilDepositarRoute,
   PerfilKycRoute: PerfilKycRoute,
   PerfilIndexRoute: PerfilIndexRoute,
 }
