@@ -493,11 +493,95 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          confirmed_at: string | null
+          contribution_id: string | null
+          created_at: string
+          group_id: string | null
+          id: string
+          method: Database["public"]["Enums"]["payment_method_key"] | null
+          note: string | null
+          proof_url: string | null
+          review_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["wallet_transaction_status"]
+          type: Database["public"]["Enums"]["wallet_transaction_type"]
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          confirmed_at?: string | null
+          contribution_id?: string | null
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          method?: Database["public"]["Enums"]["payment_method_key"] | null
+          note?: string | null
+          proof_url?: string | null
+          review_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["wallet_transaction_status"]
+          type: Database["public"]["Enums"]["wallet_transaction_type"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          confirmed_at?: string | null
+          contribution_id?: string | null
+          created_at?: string
+          group_id?: string | null
+          id?: string
+          method?: Database["public"]["Enums"]["payment_method_key"] | null
+          note?: string | null
+          proof_url?: string | null
+          review_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: Database["public"]["Enums"]["wallet_transaction_status"]
+          type?: Database["public"]["Enums"]["wallet_transaction_type"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_contribution_id_fkey"
+            columns: ["contribution_id"]
+            isOneToOne: false
+            referencedRelation: "contributions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_transactions_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      admin_finance_summary: {
+        Args: never
+        Returns: {
+          depositos_pendentes: number
+          n_contribuicoes_pendentes: number
+          n_depositos_pendentes: number
+          n_saques_pendentes: number
+          n_utilizadores: number
+          saldo_plataforma: number
+          saques_pendentes: number
+          total_contribuicoes_pagas: number
+          total_entradas: number
+          total_saidas: number
+        }[]
+      }
       admin_override_compliance: {
         Args: {
           _new_level: Database["public"]["Enums"]["compliance_level"]
@@ -530,6 +614,36 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      admin_review_transaction: {
+        Args: {
+          p_approve: boolean
+          p_reason?: string
+          p_transaction_id: string
+        }
+        Returns: {
+          amount: number
+          confirmed_at: string | null
+          contribution_id: string | null
+          created_at: string
+          group_id: string | null
+          id: string
+          method: Database["public"]["Enums"]["payment_method_key"] | null
+          note: string | null
+          proof_url: string | null
+          review_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["wallet_transaction_status"]
+          type: Database["public"]["Enums"]["wallet_transaction_type"]
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "wallet_transactions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       compliance_eligible_level: {
         Args: {
           _cycles: number
@@ -544,10 +658,34 @@ export type Database = {
         Args: { _level: Database["public"]["Enums"]["compliance_level"] }
         Returns: number
       }
+      contribute_from_wallet: {
+        Args: { p_contribution_id: string }
+        Returns: {
+          amount: number
+          created_at: string
+          due_date: string
+          group_id: string
+          id: string
+          paid_at: string | null
+          participant_id: string
+          payment_method:
+            | Database["public"]["Enums"]["payment_method_key"]
+            | null
+          round_number: number
+          status: Database["public"]["Enums"]["contribution_status"]
+        }
+        SetofOptions: {
+          from: "*"
+          to: "contributions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       generate_group_rounds: {
         Args: { p_group_id: string }
         Returns: undefined
       }
+      get_wallet_balance: { Args: { p_user_id: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -626,6 +764,66 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      request_deposit: {
+        Args: {
+          p_amount: number
+          p_method: Database["public"]["Enums"]["payment_method_key"]
+          p_proof_url: string
+        }
+        Returns: {
+          amount: number
+          confirmed_at: string | null
+          contribution_id: string | null
+          created_at: string
+          group_id: string | null
+          id: string
+          method: Database["public"]["Enums"]["payment_method_key"] | null
+          note: string | null
+          proof_url: string | null
+          review_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["wallet_transaction_status"]
+          type: Database["public"]["Enums"]["wallet_transaction_type"]
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "wallet_transactions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      request_withdrawal: {
+        Args: {
+          p_amount: number
+          p_method: Database["public"]["Enums"]["payment_method_key"]
+          p_note?: string
+        }
+        Returns: {
+          amount: number
+          confirmed_at: string | null
+          contribution_id: string | null
+          created_at: string
+          group_id: string | null
+          id: string
+          method: Database["public"]["Enums"]["payment_method_key"] | null
+          note: string | null
+          proof_url: string | null
+          review_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: Database["public"]["Enums"]["wallet_transaction_status"]
+          type: Database["public"]["Enums"]["wallet_transaction_type"]
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "wallet_transactions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
@@ -648,6 +846,12 @@ export type Database = {
       group_status: "aberto" | "completo" | "andamento" | "encerrado"
       payment_method_key: "unitel_money" | "paypay_africa" | "bank_transfer"
       round_status: "agendada" | "concluida"
+      wallet_transaction_status: "pendente" | "confirmado" | "rejeitado"
+      wallet_transaction_type:
+        | "deposito"
+        | "levantamento"
+        | "contribuicao_grupo"
+        | "recebimento_grupo"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -797,6 +1001,13 @@ export const Constants = {
       group_status: ["aberto", "completo", "andamento", "encerrado"],
       payment_method_key: ["unitel_money", "paypay_africa", "bank_transfer"],
       round_status: ["agendada", "concluida"],
+      wallet_transaction_status: ["pendente", "confirmado", "rejeitado"],
+      wallet_transaction_type: [
+        "deposito",
+        "levantamento",
+        "contribuicao_grupo",
+        "recebimento_grupo",
+      ],
     },
   },
 } as const
