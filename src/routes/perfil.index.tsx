@@ -3,12 +3,16 @@ import { useEffect, useRef, useState } from "react";
 import {
   BadgeCheck,
   Camera,
-  ChevronRight,
+  Check,
+  Copy,
+  CreditCard,
   HelpCircle,
+  History,
   Loader2,
   LogOut,
   Settings,
   ShieldCheck,
+  TrendingUp,
   type LucideIcon,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,7 +20,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-profile";
 import { useKyc, kycStatusLabel } from "@/hooks/use-kyc";
 import { useCompliance } from "@/hooks/use-compliance";
-import { ComplianceCard } from "@/components/compliance-card";
+import { useWallet } from "@/hooks/use-wallet";
+import { LEVEL_META } from "@/lib/compliance";
 import { BottomNav } from "@/components/bottom-nav";
 
 export const Route = createFileRoute("/perfil/")({
@@ -40,15 +45,22 @@ function formatPhone(phone: string | undefined): string {
   return `+244 ${local.slice(0, 3)} ${local.slice(3, 6)} ${local.slice(6)}`;
 }
 
+function shortId(userId: string | null): string {
+  if (!userId) return "—";
+  return userId.replace(/-/g, "").slice(0, 8).toUpperCase();
+}
+
 function PerfilPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { profile, loading, notAuthenticated, uploadAvatar } = useProfile();
+  const { userId, profile, loading, notAuthenticated, uploadAvatar } = useProfile();
   const { kyc } = useKyc();
   const { stats: complianceStats } = useCompliance();
+  const wallet = useWallet();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!loading && notAuthenticated) {
@@ -74,6 +86,16 @@ function PerfilPage() {
     navigate({ to: "/" });
   }
 
+  async function handleCopyId() {
+    try {
+      await navigator.clipboard.writeText(shortId(userId));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard indisponível — ignora silenciosamente.
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-secondary/40">
@@ -87,25 +109,20 @@ function PerfilPage() {
   const displayName = profile?.full_name?.trim() || "Sem nome";
   const username = profile?.username?.trim();
   const initials = (profile?.full_name?.trim()?.charAt(0) || "?").toUpperCase();
+  const level = complianceStats ? LEVEL_META[complianceStats.level] : null;
+
+  const fmt = (n: number) => new Intl.NumberFormat("pt-AO", { maximumFractionDigits: 0 }).format(n);
+  const pendingDepositKz = wallet.transactions
+    .filter((t) => t.status === "pendente" && t.type === "deposito")
+    .reduce((sum, t) => sum + Number(t.amount), 0);
 
   return (
     <div className="min-h-screen bg-secondary/40 pb-28">
       <div className="mx-auto max-w-md">
-        <header
-          className="px-5 pb-20 pt-8"
-          style={{
-            background:
-              "radial-gradient(120% 140% at 82% 0%, oklch(0.3 0.09 261.5) 0%, oklch(0.208 0.078 262.1) 60%)",
-          }}
-        >
-          <p className="font-display text-xl font-semibold text-white">Perfil</p>
-          <p className="mt-1 text-sm text-white/55">Os seus dados e preferências.</p>
-        </header>
-
-        <main className="-mt-14 space-y-5 px-5">
-          <section className="rounded-3xl bg-card p-6 text-center shadow-xl shadow-navy-900/10">
-            <div className="relative mx-auto -mt-16 h-24 w-24">
-              <div className="h-24 w-24 overflow-hidden rounded-full border-4 border-card bg-brand-green shadow-lg">
+        <header className="bg-navy-900 px-5 pb-6 pt-8 text-white">
+          <div className="flex items-center gap-4">
+            <div className="relative shrink-0">
+              <div className="h-16 w-16 overflow-hidden rounded-full border-2 border-white/20 bg-brand-green shadow-md">
                 {profile?.avatar_url ? (
                   <img
                     src={profile.avatar_url}
@@ -113,7 +130,7 @@ function PerfilPage() {
                     className="h-full w-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center font-display text-2xl font-bold text-primary-foreground">
+                  <div className="flex h-full w-full items-center justify-center font-display text-xl font-bold text-primary-foreground">
                     {initials}
                   </div>
                 )}
@@ -123,12 +140,12 @@ function PerfilPage() {
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
                 aria-label="Alterar foto de perfil"
-                className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-navy-900 text-white shadow-md ring-2 ring-card transition hover:bg-navy-800 disabled:opacity-60"
+                className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-brand-green text-navy-900 shadow-md ring-2 ring-navy-900 transition hover:bg-brand-green-dark disabled:opacity-60"
               >
                 {uploading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
                 ) : (
-                  <Camera className="h-4 w-4" aria-hidden="true" />
+                  <Camera className="h-3 w-3" aria-hidden="true" />
                 )}
               </button>
               <input
@@ -140,33 +157,98 @@ function PerfilPage() {
               />
             </div>
 
-            <h1 className="mt-4 font-display text-lg font-semibold text-card-foreground">
-              {displayName}
-            </h1>
-            {username && <p className="text-sm text-muted-foreground">@{username}</p>}
-            <p className="mt-1 text-sm text-muted-foreground">{formatPhone(profile?.phone)}</p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-display text-lg font-semibold">{displayName}</p>
+              {username && <p className="truncate text-sm text-white/55">@{username}</p>}
+              <p className="mt-0.5 text-sm text-white/70">{formatPhone(profile?.phone)}</p>
+            </div>
+          </div>
 
-            {uploadError && (
-              <p className="mt-3 text-xs font-medium text-destructive">{uploadError}</p>
+          <button
+            type="button"
+            onClick={handleCopyId}
+            className="mt-3 flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white/85 transition hover:bg-white/15"
+          >
+            ID: {shortId(userId)}
+            {copied ? (
+              <Check className="h-3.5 w-3.5 text-brand-green" aria-hidden="true" />
+            ) : (
+              <Copy className="h-3.5 w-3.5" aria-hidden="true" />
             )}
+          </button>
+
+          {uploadError && <p className="mt-3 text-xs font-medium text-red-300">{uploadError}</p>}
+
+          <div className="mt-5 rounded-2xl bg-white/10 p-4">
+            <p className="text-xs font-medium text-white/55">Saldo & Nível</p>
+            <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+              <div>
+                <p className="font-display text-base font-bold">
+                  {wallet.loading ? "…" : `${fmt(wallet.balance)}`}
+                </p>
+                <p className="mt-0.5 text-[11px] text-white/55">Disponível (Kz)</p>
+              </div>
+              <div>
+                <p className="font-display text-base font-bold">
+                  {wallet.loading ? "…" : `${fmt(pendingDepositKz)}`}
+                </p>
+                <p className="mt-0.5 text-[11px] text-white/55">Pendente (Kz)</p>
+              </div>
+              <div>
+                <p className="font-display text-base font-bold">
+                  {level ? `${level.emoji} ${level.label}` : "—"}
+                </p>
+                <p className="mt-0.5 text-[11px] text-white/55">Nível</p>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="space-y-6 px-5 pt-6">
+          <section className="grid grid-cols-2 gap-3">
+            <Link
+              to="/carteira/depositar"
+              className="rounded-2xl bg-navy-900 py-3.5 text-center font-display text-sm font-semibold text-white shadow-sm transition hover:bg-navy-800"
+            >
+              Recarregar
+            </Link>
+            <Link
+              to="/carteira"
+              className="rounded-2xl border border-border bg-card py-3.5 text-center font-display text-sm font-semibold text-card-foreground shadow-sm transition hover:bg-accent"
+            >
+              Retirar
+            </Link>
           </section>
 
-          <ComplianceCard stats={complianceStats} />
+          <section>
+            <h2 className="mb-3 font-display text-sm font-semibold text-foreground">Minha conta</h2>
+            <div className="grid grid-cols-3 gap-3">
+              <AccountTile
+                icon={BadgeCheck}
+                label="KYC Basic"
+                to="/perfil/kyc"
+                badge={kycBadge(kyc?.status)}
+              />
+              <AccountTile icon={CreditCard} label="Carteira" to="/carteira" />
+              <AccountTile icon={History} label="Transações" to="/carteira" />
+              <AccountTile icon={TrendingUp} label="Nível" to="/nivel" />
+              <AccountTile icon={Settings} label="Configurações" to="/perfil/configuracoes" />
+              <AccountTile icon={HelpCircle} label="Ajuda" to="/assistente" />
+            </div>
+          </section>
 
-          <section className="overflow-hidden rounded-3xl bg-card shadow-xl shadow-navy-900/10">
-            <MenuLink
-              to="/perfil/kyc"
-              icon={BadgeCheck}
-              label="KYC Basic"
-              badge={kycBadge(kyc?.status)}
-            />
-            <MenuLink
-              to="/perfil/configuracoes"
-              icon={Settings}
-              label="Editar perfil e configurações"
-            />
-            <MenuLink to="/assistente" icon={HelpCircle} label="Ajuda e suporte" />
-            <MenuRow icon={ShieldCheck} label="Segurança da conta" />
+          <section className="overflow-hidden rounded-2xl border border-border bg-card">
+            <div className="flex items-center gap-3 px-5 py-4">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-navy-900">
+                <ShieldCheck className="h-4.5 w-4.5" aria-hidden="true" />
+              </span>
+              <span className="flex-1 text-sm font-medium text-card-foreground">
+                Segurança da conta
+              </span>
+              <span className="rounded-full bg-brand-green/15 px-2.5 py-1 text-xs font-semibold text-brand-green-dark">
+                Ativa
+              </span>
+            </div>
           </section>
 
           <button
@@ -207,48 +289,31 @@ function kycBadge(status: string | undefined): MenuBadge {
   }
 }
 
-function MenuLink({
-  to,
+function AccountTile({
   icon: Icon,
   label,
+  to,
   badge,
 }: {
-  to: string;
   icon: LucideIcon;
   label: string;
+  to: string;
   badge?: MenuBadge;
 }) {
   return (
     <Link
       to={to}
-      className="flex items-center gap-3 border-b border-border px-5 py-4 text-sm font-medium text-card-foreground transition last:border-b-0 hover:bg-secondary/60"
+      className="relative flex flex-col items-center gap-2 rounded-2xl border border-border bg-card py-4 text-center transition hover:bg-accent"
     >
-      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-navy-900">
-        <Icon className="h-4.5 w-4.5" aria-hidden="true" />
-      </span>
-      <span className="flex-1">{label}</span>
+      <Icon className="h-5 w-5 text-navy-900" strokeWidth={1.9} aria-hidden="true" />
+      <span className="text-xs font-medium leading-tight text-card-foreground">{label}</span>
       {badge && (
         <span
-          className={`rounded-full px-2.5 py-1 text-xs font-semibold ${BADGE_TONE_CLASSES[badge.tone]}`}
+          className={`absolute -right-1.5 -top-1.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${BADGE_TONE_CLASSES[badge.tone]}`}
         >
           {badge.text}
         </span>
       )}
-      <ChevronRight className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
     </Link>
-  );
-}
-
-function MenuRow({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
-  return (
-    <div className="flex items-center gap-3 border-b border-border px-5 py-4 text-sm font-medium text-card-foreground last:border-b-0">
-      <span className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-navy-900">
-        <Icon className="h-4.5 w-4.5" aria-hidden="true" />
-      </span>
-      <span className="flex-1">{label}</span>
-      <span className="rounded-full bg-brand-green/15 px-2.5 py-1 text-xs font-semibold text-brand-green-dark">
-        Ativa
-      </span>
-    </div>
   );
 }
