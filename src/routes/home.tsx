@@ -154,7 +154,7 @@ function RechargeWithdrawButtons() {
   return (
     <section className="grid grid-cols-2 gap-3">
       <Link
-        to="/carteira/depositar"
+        to="/perfil/depositar"
         className="flex items-center justify-center gap-2 rounded-2xl bg-navy-900 py-4 font-display text-sm font-semibold text-white shadow-md shadow-navy-900/20 transition hover:bg-navy-800"
       >
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-green text-navy-900">
@@ -163,7 +163,7 @@ function RechargeWithdrawButtons() {
         Recarregar
       </Link>
       <Link
-        to="/carteira"
+        to="/perfil/pagamento"
         className="flex items-center justify-center gap-2 rounded-2xl bg-navy-900 py-4 font-display text-sm font-semibold text-white shadow-md shadow-navy-900/20 transition hover:bg-navy-800"
       >
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-green text-navy-900">
