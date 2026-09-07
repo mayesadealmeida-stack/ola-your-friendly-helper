@@ -102,12 +102,42 @@ export function useWallet() {
     [userId, refresh],
   );
 
+  const requestWithdrawal = useCallback(
+    async (
+      amountKz: number,
+      method: PaymentMethodKey,
+      note: string,
+    ): Promise<{ error: string | null }> => {
+      if (!userId) return { error: "Sessão expirada. Entre novamente." };
+      if (amountKz <= 0) return { error: "Indique um valor válido." };
+      if (amountKz > (query.data?.balance ?? 0)) {
+        return { error: "Saldo insuficiente para este pedido." };
+      }
+
+      const { error } = await supabase.rpc(
+        "request_withdrawal" as never,
+        {
+          p_amount: amountKz,
+          p_method: method,
+          p_note: note,
+        } as never,
+      );
+
+      if (error) return { error: error.message };
+
+      await refresh();
+      return { error: null };
+    },
+    [userId, refresh, query.data?.balance],
+  );
+
   return {
     userId,
     balance: query.data?.balance ?? 0,
     transactions: query.data?.transactions ?? [],
     loading: query.isPending,
     requestDeposit,
+    requestWithdrawal,
     refresh,
   };
 }

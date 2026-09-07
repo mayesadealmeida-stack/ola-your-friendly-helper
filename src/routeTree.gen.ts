@@ -22,6 +22,7 @@ import { Route as PerfilIndexRouteImport } from './routes/perfil.index'
 import { Route as PerfilConfiguracoesRouteImport } from './routes/perfil.configuracoes'
 import { Route as PerfilDepositarRouteImport } from './routes/perfil.depositar'
 import { Route as PerfilKycRouteImport } from './routes/perfil.kyc'
+import { Route as PerfilPagamentoRouteImport } from './routes/perfil.pagamento'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -88,6 +89,11 @@ const PerfilKycRoute = PerfilKycRouteImport.update({
   path: '/kyc',
   getParentRoute: () => PerfilRoute,
 } as any)
+const PerfilPagamentoRoute = PerfilPagamentoRouteImport.update({
+  id: '/pagamento',
+  path: '/pagamento',
+  getParentRoute: () => PerfilRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
   '/perfil/depositar': typeof PerfilDepositarRoute
   '/perfil/kyc': typeof PerfilKycRoute
+  '/perfil/pagamento': typeof PerfilPagamentoRoute
   '/grupos/': typeof GruposIndexRoute
   '/perfil/': typeof PerfilIndexRoute
 }
@@ -114,6 +121,7 @@ export interface FileRoutesByTo {
   '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
   '/perfil/depositar': typeof PerfilDepositarRoute
   '/perfil/kyc': typeof PerfilKycRoute
+  '/perfil/pagamento': typeof PerfilPagamentoRoute
   '/grupos': typeof GruposIndexRoute
   '/perfil': typeof PerfilIndexRoute
 }
@@ -130,6 +138,7 @@ export interface FileRoutesById {
   '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
   '/perfil/depositar': typeof PerfilDepositarRoute
   '/perfil/kyc': typeof PerfilKycRoute
+  '/perfil/pagamento': typeof PerfilPagamentoRoute
   '/grupos/': typeof GruposIndexRoute
   '/perfil/': typeof PerfilIndexRoute
 }
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
     | '/perfil/configuracoes'
     | '/perfil/depositar'
     | '/perfil/kyc'
+    | '/perfil/pagamento'
     | '/grupos/'
     | '/perfil/'
   fileRoutesByTo: FileRoutesByTo
@@ -160,6 +170,7 @@ export interface FileRouteTypes {
     | '/perfil/configuracoes'
     | '/perfil/depositar'
     | '/perfil/kyc'
+    | '/perfil/pagamento'
     | '/grupos'
     | '/perfil'
   id:
@@ -175,6 +186,7 @@ export interface FileRouteTypes {
     | '/perfil/configuracoes'
     | '/perfil/depositar'
     | '/perfil/kyc'
+    | '/perfil/pagamento'
     | '/grupos/'
     | '/perfil/'
   fileRoutesById: FileRoutesById
@@ -282,6 +294,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PerfilKycRouteImport
       parentRoute: typeof PerfilRoute
     }
+    '/perfil/pagamento': {
+      id: '/perfil/pagamento'
+      path: '/pagamento'
+      fullPath: '/perfil/pagamento'
+      preLoaderRoute: typeof PerfilPagamentoRouteImport
+      parentRoute: typeof PerfilRoute
+    }
   }
 }
 
@@ -302,6 +321,7 @@ interface PerfilRouteChildren {
   PerfilConfiguracoesRoute: typeof PerfilConfiguracoesRoute
   PerfilDepositarRoute: typeof PerfilDepositarRoute
   PerfilKycRoute: typeof PerfilKycRoute
+  PerfilPagamentoRoute: typeof PerfilPagamentoRoute
   PerfilIndexRoute: typeof PerfilIndexRoute
 }
 
@@ -309,6 +329,7 @@ const PerfilRouteChildren: PerfilRouteChildren = {
   PerfilConfiguracoesRoute: PerfilConfiguracoesRoute,
   PerfilDepositarRoute: PerfilDepositarRoute,
   PerfilKycRoute: PerfilKycRoute,
+  PerfilPagamentoRoute: PerfilPagamentoRoute,
   PerfilIndexRoute: PerfilIndexRoute,
 }
 
