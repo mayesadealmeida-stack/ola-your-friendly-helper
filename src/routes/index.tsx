@@ -141,14 +141,12 @@ function Index() {
       <div className="w-full max-w-sm">
         {/* Marca */}
         <div className="flex flex-col items-center">
-          <div className="flex h-28 w-28 items-center justify-center rounded-full border-[3px] border-navy-900 bg-white shadow-sm">
-            <div className="flex h-[88px] w-[88px] items-center justify-center rounded-full bg-white">
-              <img
-                src="/logo-group-mobil-mark.webp"
-                alt="Group Mobil"
-                className="h-16 w-16 object-contain"
-              />
-            </div>
+          <div className="h-28 w-28 overflow-hidden rounded-full shadow-sm ring-[3px] ring-navy-900">
+            <img
+              src="/logo-group-mobil-badge.webp"
+              alt="Group Mobil"
+              className="h-full w-full object-cover"
+            />
           </div>
           <h1 className="mt-4 font-display text-3xl font-extrabold text-navy-900">Group Mobil</h1>
         </div>
