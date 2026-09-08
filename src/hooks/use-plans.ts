@@ -76,11 +76,39 @@ export function usePlans(includeInactive = false) {
     [refresh],
   );
 
+  const deletePlan = useCallback(
+    async (plan: InvestmentPlan): Promise<{ error: string | null }> => {
+      const { error } = await supabase.from("investment_plans").delete().eq("id", plan.id);
+      if (error) {
+        const friendly = /foreign key|violat/i.test(error.message)
+          ? "Não é possível eliminar: existem investimentos de utilizadores associados a este plano."
+          : error.message;
+        return { error: friendly };
+      }
+
+      // A imagem é opcional. Remover o ficheiro depois do registo evita deixar
+      // imagens órfãs no bucket quando um plano é eliminado.
+      if (plan.image_url) {
+        const marker = "/storage/v1/object/public/planos/";
+        const markerIndex = plan.image_url.indexOf(marker);
+        if (markerIndex >= 0) {
+          const path = decodeURIComponent(plan.image_url.slice(markerIndex + marker.length));
+          await supabase.storage.from("planos").remove([path]);
+        }
+      }
+
+      await refresh();
+      return { error: null };
+    },
+    [refresh],
+  );
+
   return {
     plans: query.data ?? [],
     loading: query.isPending,
     error: query.error?.message ?? null,
     createPlan,
+    deletePlan,
     refresh,
   };
 }
