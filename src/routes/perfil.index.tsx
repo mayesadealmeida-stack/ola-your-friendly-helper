@@ -358,7 +358,11 @@ function InstallAppCard() {
 
   async function handleClick() {
     if (canInstall) {
-      await promptInstall();
+      try {
+        await promptInstall();
+      } catch {
+        setShowHelp(true);
+      }
       return;
     }
     setShowHelp((v) => !v);

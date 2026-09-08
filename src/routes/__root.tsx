@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { InstallAppBanner } from "../components/install-app-banner";
 // Import por efeito colateral: regista o listener de "beforeinstallprompt"
 // assim que o site carrega, em qualquer página — ver hooks/use-install-prompt.
 import "../hooks/use-install-prompt";
@@ -150,6 +151,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <InstallAppBanner />
     </QueryClientProvider>
   );
 }

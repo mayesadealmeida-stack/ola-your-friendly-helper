@@ -62,11 +62,17 @@ export function useInstallPrompt() {
 
   const promptInstall = useCallback(async () => {
     if (!deferredEvent) return null;
-    await deferredEvent.prompt();
-    const choice = await deferredEvent.userChoice;
-    deferredEvent = null;
-    notify();
-    return choice.outcome;
+    const event = deferredEvent;
+
+    try {
+      await event.prompt();
+      const choice = await event.userChoice;
+      return choice.outcome;
+    } finally {
+      // O mesmo evento não pode ser reutilizado depois de abrir o diálogo.
+      deferredEvent = null;
+      notify();
+    }
   }, []);
 
   return {

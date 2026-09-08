@@ -3,13 +3,11 @@
 // dar uma resposta offline simpática em vez do erro do browser.
 // Não faz cache agressivo de nada: cada pedido vai sempre à rede primeiro.
 
-const CACHE_NAME = "group-mobil-shell-v1";
+const CACHE_NAME = "group-mobil-shell-v2";
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.add(OFFLINE_URL)),
-  );
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.add(OFFLINE_URL)));
   self.skipWaiting();
 });
 
@@ -28,8 +26,6 @@ self.addEventListener("fetch", (event) => {
   // Só intercepta navegações de página (não API, não assets) — se a rede
   // falhar (sem internet), mostra a página offline em vez do erro nativo.
   if (event.request.mode === "navigate") {
-    event.respondWith(
-      fetch(event.request).catch(() => caches.match(OFFLINE_URL)),
-    );
+    event.respondWith(fetch(event.request).catch(() => caches.match(OFFLINE_URL)));
   }
 });
