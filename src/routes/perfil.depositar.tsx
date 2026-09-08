@@ -1,6 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Loader2, Copy, Check, Paperclip, CheckCircle2, X, Hash } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  Copy,
+  Check,
+  Paperclip,
+  CheckCircle2,
+  X,
+  Hash,
+  Receipt,
+} from "lucide-react";
 import { useProfile } from "@/hooks/use-profile";
 import { useWallet } from "@/hooks/use-wallet";
 
@@ -305,8 +315,18 @@ function ReferenceCard({
 
   return (
     <div className="rounded-2xl bg-card p-5 shadow-sm">
-      <p className="font-display text-sm font-bold text-navy-900">Pagamento por referência</p>
-      <p className="mt-1 text-sm text-muted-foreground">
+      <div className="flex items-center gap-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-green/15 text-brand-green-dark">
+          <Receipt className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
+        </span>
+        <div>
+          <p className="font-display text-sm font-bold text-navy-900">Pagamento por referência</p>
+          <p className="text-xs text-muted-foreground">
+            Pague num ATM ou na app Multicaixa Express
+          </p>
+        </div>
+      </div>
+      <p className="mt-3 text-sm text-muted-foreground">
         Valor:{" "}
         <span className="font-medium text-card-foreground">
           Kz {new Intl.NumberFormat("pt-AO").format(amountValue)}
