@@ -56,7 +56,7 @@ begin
   end if;
 
   if p_fee_percent is null or p_fee_percent < 0 or p_fee_percent > 100 then
-    raise exception 'A taxa deve estar entre 0% e 100%.';
+    raise exception 'A taxa deve estar entre 0%% e 100%%.';
   end if;
 
   update public.withdrawal_fee_settings
