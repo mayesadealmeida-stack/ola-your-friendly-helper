@@ -337,6 +337,48 @@ export type Database = {
         }
         Relationships: []
       }
+      kyc_basic: {
+        Row: {
+          address: string
+          address_reference: string
+          birth_date: string
+          city: string
+          country: string
+          created_at: string
+          full_name: string
+          id: string
+          reviewed_at: string | null
+          status: Database["public"]["Enums"]["kyc_status"]
+          submitted_at: string
+        }
+        Insert: {
+          address: string
+          address_reference?: string
+          birth_date: string
+          city: string
+          country: string
+          created_at?: string
+          full_name: string
+          id: string
+          reviewed_at?: string | null
+          status?: Database["public"]["Enums"]["kyc_status"]
+          submitted_at?: string
+        }
+        Update: {
+          address?: string
+          address_reference?: string
+          birth_date?: string
+          city?: string
+          country?: string
+          created_at?: string
+          full_name?: string
+          id?: string
+          reviewed_at?: string | null
+          status?: Database["public"]["Enums"]["kyc_status"]
+          submitted_at?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string
@@ -447,6 +489,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          avatar_url: string | null
           created_at: string
           full_name: string
           id: string
@@ -455,6 +498,7 @@ export type Database = {
           username: string
         }
         Insert: {
+          avatar_url?: string | null
           created_at?: string
           full_name?: string
           id: string
@@ -463,6 +507,7 @@ export type Database = {
           username?: string
         }
         Update: {
+          avatar_url?: string | null
           created_at?: string
           full_name?: string
           id?: string
@@ -844,6 +889,7 @@ export type Database = {
       contribution_status: "pendente" | "confirmada" | "atrasada"
       group_frequency: "semanal" | "mensal"
       group_status: "aberto" | "completo" | "andamento" | "encerrado"
+      kyc_status: "pending" | "verified" | "rejected"
       payment_method_key: "unitel_money" | "paypay_africa" | "bank_transfer"
       round_status: "agendada" | "concluida"
       wallet_transaction_status: "pendente" | "confirmado" | "rejeitado"
@@ -999,6 +1045,7 @@ export const Constants = {
       contribution_status: ["pendente", "confirmada", "atrasada"],
       group_frequency: ["semanal", "mensal"],
       group_status: ["aberto", "completo", "andamento", "encerrado"],
+      kyc_status: ["pending", "verified", "rejected"],
       payment_method_key: ["unitel_money", "paypay_africa", "bank_transfer"],
       round_status: ["agendada", "concluida"],
       wallet_transaction_status: ["pendente", "confirmado", "rejeitado"],
