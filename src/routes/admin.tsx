@@ -872,9 +872,9 @@ function EliminarDadosFinanceirosCard({ onDone }: { onDone: () => void }) {
           <h2 className="font-display text-sm font-semibold text-destructive">Zona de perigo</h2>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
             Eliminar dados apaga permanentemente TODOS os dados da aplicação: saldos, depósitos,
-            levantamentos, contribuições, perfis, verificação KYC, grupos, métodos de pagamento,
-            notificações e publicações — de todos os utilizadores. As contas de acesso (login) não
-            são apagadas, mas ficam sem nenhum dado associado. Esta ação não pode ser desfeita.
+            levantamentos, contribuições, perfis, verificação KYC, grupos, notificações e
+            publicações — de todos os utilizadores. Os métodos de pagamento e as contas de acesso
+            (login) não são apagados. Esta ação não pode ser desfeita.
           </p>
         </div>
       </div>
