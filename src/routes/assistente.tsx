@@ -1,8 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, KeyRound, Send } from "lucide-react";
 import { askAssistant } from "@/lib/assistant.functions";
+import { recoverAccount } from "@/lib/recovery.functions";
+import { validatePhoneNumber } from "@/lib/phone";
 import logo from "/logo-group-mobil.webp";
 
 export const Route = createFileRoute("/assistente")({
@@ -41,17 +43,91 @@ const WELCOME: ChatMessage = {
     "Olá! Sou o Assistente Group Mobil. Posso ajudar com saldo, depósitos, levantamentos, transferências, grupos e segurança. O que precisa hoje?",
 };
 
+const RECOVERY_WELCOME: ChatMessage = {
+  role: "assistant",
+  content:
+    "Vamos recuperar o acesso à sua conta. Primeiro, envie o número de telefone usado no registo. O código 244 não conta: o número local deve ter 9 dígitos.",
+};
+
 function AssistantPage() {
   const ask = useServerFn(askAssistant);
+  const recoverAccountFn = useServerFn(recoverAccount);
+  const searchStr = useRouterState({ select: (state) => state.location.searchStr });
+  const recoveryMode = new URLSearchParams(searchStr).get("modo") === "recuperar";
   const [messages, setMessages] = useState<ChatMessage[]>([WELCOME]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recoveryStep, setRecoveryStep] = useState<"phone" | "name" | "done">("phone");
+  const [recoveryPhone, setRecoveryPhone] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (recoveryMode) {
+      setMessages([RECOVERY_WELCOME]);
+      setInput("");
+      setError(null);
+      setRecoveryPhone("");
+      setRecoveryStep("phone");
+    }
+  }, [recoveryMode]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, loading]);
+
+  async function runRecovery(text: string) {
+    const content = text.trim();
+    if (!content || loading || recoveryStep === "done") return;
+
+    setInput("");
+    setError(null);
+
+    if (recoveryStep === "phone") {
+      const phoneError = validatePhoneNumber(content);
+      if (phoneError) {
+        setError(phoneError);
+        return;
+      }
+
+      setRecoveryPhone(content);
+      setRecoveryStep("name");
+      setMessages((prev) => [
+        ...prev,
+        { role: "user", content },
+        {
+          role: "assistant",
+          content: "Obrigado. Agora envie o primeiro nome usado quando criou a conta.",
+        },
+      ]);
+      return;
+    }
+
+    setMessages((prev) => [...prev, { role: "user", content }]);
+    setLoading(true);
+
+    try {
+      const result = await recoverAccountFn({
+        data: { phone: recoveryPhone, firstName: content },
+      });
+      if (result.ok) {
+        setRecoveryStep("done");
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: `Dados confirmados. A sua nova palavra-passe temporária é: ${result.password}\n\nGuarde-a num local seguro, entre na aplicação e troque-a em Perfil → Configurações → Alterar senha.`,
+          },
+        ]);
+      } else {
+        setError(result.error);
+      }
+    } catch {
+      setError("Não foi possível concluir a recuperação agora. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function send(text: string) {
     const content = text.trim();
@@ -104,7 +180,7 @@ function AssistantPage() {
           />
           <div>
             <h1 className="font-display text-base font-semibold text-white">
-              Assistente Group Mobil
+              {recoveryMode ? "Recuperar acesso" : "Assistente Group Mobil"}
             </h1>
             <p className="text-xs text-white/55">
               {loading ? "A escrever…" : "Online • responde em segundos"}
@@ -142,18 +218,33 @@ function AssistantPage() {
           <p className="rounded-xl bg-destructive/10 px-4 py-3 text-sm text-destructive">{error}</p>
         )}
 
-        {messages.length === 1 && (
-          <div className="flex flex-wrap gap-2 pt-2">
-            {SUGGESTIONS.map((s) => (
-              <button
-                key={s}
-                onClick={() => void send(s)}
-                className="rounded-full border border-border bg-card px-3 py-2 text-xs font-medium text-card-foreground transition hover:bg-accent"
-              >
-                {s}
-              </button>
-            ))}
-          </div>
+        {messages.length === 1 &&
+          (!recoveryMode ? (
+            <div className="flex flex-wrap gap-2 pt-2">
+              {SUGGESTIONS.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => void send(s)}
+                  className="rounded-full border border-border bg-card px-3 py-2 text-xs font-medium text-card-foreground transition hover:bg-accent"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 rounded-xl bg-brand-green/10 px-3 py-2 text-xs text-card-foreground">
+              <KeyRound className="h-4 w-4 shrink-0 text-brand-green-dark" aria-hidden="true" />
+              <span>Não partilhe a sua palavra-passe com ninguém.</span>
+            </div>
+          ))}
+
+        {recoveryMode && recoveryStep === "done" && (
+          <Link
+            to="/"
+            className="mx-auto block w-fit rounded-full bg-navy-900 px-5 py-3 text-sm font-semibold text-white"
+          >
+            Voltar ao login
+          </Link>
         )}
 
         <div ref={bottomRef} />
@@ -162,7 +253,7 @@ function AssistantPage() {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          void send(input);
+          void (recoveryMode ? runRecovery(input) : send(input));
         }}
         className="sticky bottom-0 border-t border-border bg-card/95 backdrop-blur"
       >
@@ -170,14 +261,27 @@ function AssistantPage() {
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            maxLength={2000}
-            placeholder="Escreva a sua pergunta…"
-            aria-label="Mensagem para o assistente"
+            maxLength={recoveryMode ? 80 : 2000}
+            placeholder={
+              recoveryMode
+                ? recoveryStep === "phone"
+                  ? "Número de telefone…"
+                  : recoveryStep === "name"
+                    ? "Primeiro nome…"
+                    : "Recuperação concluída"
+                : "Escreva a sua pergunta…"
+            }
+            aria-label={
+              recoveryMode ? "Dados para recuperar a conta" : "Mensagem para o assistente"
+            }
+            disabled={recoveryMode && recoveryStep === "done"}
             className="flex-1 rounded-full border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-brand-green"
           />
           <button
             type="submit"
-            disabled={loading || input.trim().length === 0}
+            disabled={
+              loading || input.trim().length === 0 || (recoveryMode && recoveryStep === "done")
+            }
             aria-label="Enviar mensagem"
             className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-green text-primary-foreground transition hover:bg-brand-green-dark disabled:opacity-40"
           >

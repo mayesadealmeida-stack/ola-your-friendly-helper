@@ -56,7 +56,7 @@ export function usePlans(includeInactive = false) {
           name: values.name,
           description: values.description ?? "",
           duration_value: Number(values.duration_value),
-          duration_unit: values.duration_unit,
+          duration_unit: values.duration_unit ?? "meses",
           entry_price: Number(values.entry_price),
           estimated_return: Number(values.estimated_return),
           image_url: imageUrl,
@@ -68,7 +68,9 @@ export function usePlans(includeInactive = false) {
         await refresh();
         return { error: null };
       } catch (error) {
-        return { error: error instanceof Error ? error.message : "Não foi possível criar o plano." };
+        return {
+          error: error instanceof Error ? error.message : "Não foi possível criar o plano.",
+        };
       }
     },
     [refresh],

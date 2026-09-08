@@ -50,6 +50,13 @@ export const Route = createFileRoute("/admin")({
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "theme-color", content: "#071b4d" },
+      { name: "apple-mobile-web-app-title", content: "GM Admin" },
+    ],
+    links: [
+      { rel: "manifest", href: "/admin-manifest.json" },
+      { rel: "icon", href: "/admin-icon.svg", type: "image/svg+xml" },
+      { rel: "apple-touch-icon", href: "/admin-icon.svg" },
     ],
   }),
   component: AdminPage,
@@ -972,6 +979,8 @@ function PlanForm({
   onSubmit: (values: {
     name: string;
     description: string;
+    duration_value: number;
+    duration_unit: string;
     entry_price: number;
     estimated_return: number;
     image?: File | null;

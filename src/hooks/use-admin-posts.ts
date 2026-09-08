@@ -67,8 +67,8 @@ export function useAdminPosts(enabled: boolean) {
           author_avatar_url: "/logo-group-mobil-mark.webp",
           title: values.title.trim(),
           body: values.body?.trim() || "",
-          category: values.category,
           image_url: imageUrl,
+          ...(values.category ? { category: values.category } : {}),
         };
 
         const { error } = await supabase.from("posts").insert(payload);

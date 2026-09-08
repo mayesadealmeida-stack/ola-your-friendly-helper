@@ -6,6 +6,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  useRouterState,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
@@ -138,6 +139,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   useEffect(() => {
     if (typeof window === "undefined" || !("serviceWorker" in navigator)) return;
@@ -146,6 +148,20 @@ function RootComponent() {
       // ecrã de "sem ligação". Falha silenciosa de propósito.
     });
   }, []);
+
+  useEffect(() => {
+    const isAdmin = pathname === "/admin";
+    const manifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    const appleIcon = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]');
+
+    if (manifest) manifest.href = isAdmin ? "/admin-manifest.json" : "/manifest.json";
+    if (icon) {
+      icon.href = isAdmin ? "/admin-icon.svg" : "/favicon.ico";
+      icon.type = isAdmin ? "image/svg+xml" : "image/x-icon";
+    }
+    if (appleIcon) appleIcon.href = isAdmin ? "/admin-icon.svg" : "/apple-touch-icon.png";
+  }, [pathname]);
 
   return (
     <QueryClientProvider client={queryClient}>

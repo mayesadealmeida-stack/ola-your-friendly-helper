@@ -179,6 +179,12 @@ function Index() {
                 />
                 Lembrar de mim
               </label>
+              <a
+                href="/assistente?modo=recuperar"
+                className="font-semibold text-navy-900 underline-offset-4 hover:underline"
+              >
+                Esqueci a palavra-passe
+              </a>
             </div>
 
             {error && (

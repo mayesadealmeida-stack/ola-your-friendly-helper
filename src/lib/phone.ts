@@ -3,10 +3,29 @@
 // Supabase (que exige email). Partilhado entre o login principal e o do
 // painel de administração.
 
-export function normalizePhone(input: string): string {
+export const ANGOLA_PHONE_PREFIXES = ["92", "93", "94", "95", "97"] as const;
+
+function localPhoneDigits(input: string): string {
   const digits = input.replace(/\D/g, "");
-  const local = digits.startsWith("244") ? digits.slice(3) : digits.replace(/^0+/, "");
-  return `244${local}`;
+  const withoutCountryCode = digits.startsWith("244") ? digits.slice(3) : digits;
+  return withoutCountryCode.replace(/^0+/, "");
+}
+
+export function normalizePhone(input: string): string {
+  return `244${localPhoneDigits(input)}`;
+}
+
+export function validatePhoneNumber(phone: string): string | null {
+  if (!phone.trim()) return "Digite o número de telefone.";
+
+  const local = localPhoneDigits(phone);
+  const hasValidPrefix = ANGOLA_PHONE_PREFIXES.some((prefix) => local.startsWith(prefix));
+
+  if (local.length !== 9 || !hasValidPrefix) {
+    return "Use um número angolano com 9 dígitos, começado por 92, 93, 94, 95 ou 97. Ex.: 923 000 000";
+  }
+
+  return null;
 }
 
 export function phoneToEmail(phone: string): string {
@@ -34,7 +53,7 @@ export function getLoginEmail(): string {
 }
 
 export function getAdminLoginEmail(): string {
-  const configuredEmail = import.meta.env.VITE_ADMIN_EMAIL?.trim();
+  const configuredEmail = import.meta.env["VITE_ADMIN_EMAIL"]?.trim();
   return configuredEmail || getRememberedLoginEmail() || DEFAULT_ADMIN_EMAIL;
 }
 
@@ -60,9 +79,8 @@ export function validateSignupIdentity(fullName: string, username: string): stri
 }
 
 export function validatePhonePassword(phone: string, password: string): string | null {
-  if (!phone.trim()) return "Digite o número de telefone.";
-  const digits = normalizePhone(phone);
-  if (digits.length < 11) return "Número de telefone inválido. Ex.: 900 000 000";
+  const phoneError = validatePhoneNumber(phone);
+  if (phoneError) return phoneError;
   if (!password) return "Digite a palavra-passe.";
   return validatePassword(password);
 }
