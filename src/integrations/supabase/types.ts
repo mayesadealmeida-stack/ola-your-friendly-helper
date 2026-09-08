@@ -376,6 +376,7 @@ export type Database = {
       }
       user_investments: {
         Row: {
+          cancelled_at: string | null
           created_at: string
           ends_at: string
           entry_amount: number
@@ -388,6 +389,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cancelled_at?: string | null
           created_at?: string
           ends_at: string
           entry_amount: number
@@ -400,6 +402,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cancelled_at?: string | null
           created_at?: string
           ends_at?: string
           entry_amount?: number
@@ -823,6 +826,14 @@ export type Database = {
       create_investment: {
         Args: { p_plan_id: string }
         Returns: Database["public"]["Tables"]["user_investments"]["Row"]
+      }
+      admin_cancel_investment: {
+        Args: { p_investment_id: string; p_refund?: boolean }
+        Returns: Database["public"]["Tables"]["user_investments"]["Row"]
+      }
+      admin_wipe_financial_data: {
+        Args: Record<PropertyKey, never>
+        Returns: number
       }
       admin_override_compliance: {
         Args: {
