@@ -15,6 +15,8 @@ import {
   MessageCircle,
   Share2,
   ShieldCheck,
+  HandCoins,
+
   type LucideIcon,
 } from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
