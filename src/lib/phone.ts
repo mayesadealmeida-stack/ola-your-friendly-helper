@@ -42,8 +42,22 @@ export function validatePassword(password: string): string | null {
   return password === APP_ACCESS_PASSWORD ? null : "Senha incorreta.";
 }
 
+export function validateSignupIdentity(fullName: string, username: string): string | null {
+  if (!/^\p{L}+(?:[ '\u002D]\p{L}+)*$/u.test(fullName.trim())) {
+    return "O nome completo deve conter apenas letras e espaços.";
+  }
+
+  if (!/^\p{L}[\p{L}0-9._-]{2,19}$/u.test(username.trim())) {
+    return "O nome de usuário deve começar com uma letra e ter 3-20 caracteres.";
+  }
+
+  return null;
+}
+
 export function validatePhonePassword(phone: string, password: string): string | null {
+  if (!phone.trim()) return "Digite o número de telefone.";
   const digits = normalizePhone(phone);
   if (digits.length < 11) return "Número de telefone inválido. Ex.: 900 000 000";
+  if (!password) return "Digite a palavra-passe.";
   return validatePassword(password);
 }

@@ -7,6 +7,7 @@ import {
   normalizePhone,
   phoneToEmail,
   rememberLoginEmail,
+  validateSignupIdentity,
   validatePhonePassword,
 } from "@/lib/phone";
 
@@ -49,6 +50,12 @@ function Index() {
     const rawPhone = String(form.get("phone") ?? "").trim();
     const password = String(form.get("password") ?? "");
 
+    const invalidIdentity = validateSignupIdentity(fullName, username);
+    if (invalidIdentity) {
+      setError(invalidIdentity);
+      return;
+    }
+
     const invalid = validatePhonePassword(rawPhone, password);
     if (invalid) {
       setError(invalid);
@@ -84,7 +91,7 @@ function Index() {
     });
     setLoading(false);
     if (signInError) {
-      setError(signInError.message);
+      setError(authErrorMessage(signInError.message, "signup"));
       return;
     }
     rememberLoginEmail(phoneToEmail(rawPhone));
@@ -117,7 +124,7 @@ function Index() {
 
     setLoading(false);
     if (signInError) {
-      setError("Telefone ou senha incorretos.");
+      setError(authErrorMessage(signInError.message, "login"));
       return;
     }
     rememberLoginEmail(email);
@@ -257,6 +264,31 @@ function Index() {
       </div>
     </div>
   );
+}
+
+function authErrorMessage(message: string, context: "login" | "signup"): string {
+  const normalized = message.toLowerCase();
+
+  if (
+    normalized.includes("invalid login credentials") ||
+    normalized.includes("invalid credentials") ||
+    normalized.includes("user not found")
+  ) {
+    return "Não foi possível entrar: verifique o número de telefone e a palavra-passe.";
+  }
+  if (normalized.includes("email not confirmed")) {
+    return "Esta conta ainda não foi confirmada.";
+  }
+  if (normalized.includes("already") || normalized.includes("already registered")) {
+    return "Este número já tem conta. Faça login.";
+  }
+  if (context === "signup" && normalized.includes("violates row-level security")) {
+    return "Não foi possível criar o perfil. Verifique os dados e tente novamente.";
+  }
+
+  return context === "login"
+    ? "Não foi possível entrar agora. Tente novamente."
+    : "Não foi possível criar a conta. Tente novamente.";
 }
 
 function IconField({

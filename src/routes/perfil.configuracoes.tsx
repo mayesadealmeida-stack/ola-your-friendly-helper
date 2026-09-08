@@ -4,6 +4,7 @@ import { ArrowLeft, Camera, Check, LogOut, Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-profile";
+import { validateSignupIdentity } from "@/lib/phone";
 
 export const Route = createFileRoute("/perfil/configuracoes")({
   head: () => ({
@@ -91,10 +92,17 @@ function ConfiguracoesPage() {
       setProfileMessage({ type: "error", text: "O nome não pode ficar vazio." });
       return;
     }
-    if (trimmedUsername && !/^[a-zA-Z0-9_.]{3,20}$/.test(trimmedUsername)) {
+    if (!/^\p{L}+(?:[ '\u002D]\p{L}+)*$/u.test(trimmedName)) {
       setProfileMessage({
         type: "error",
-        text: "Utilizador deve ter 3-20 caracteres: letras, números, ponto ou underscore.",
+        text: "O nome completo deve conter apenas letras e espaços.",
+      });
+      return;
+    }
+    if (trimmedUsername && validateSignupIdentity(trimmedName, trimmedUsername)) {
+      setProfileMessage({
+        type: "error",
+        text: "O nome de usuário deve começar com uma letra e ter 3-20 caracteres.",
       });
       return;
     }
