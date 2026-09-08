@@ -4,11 +4,9 @@ import { Phone, Lock, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { setRememberMe as persistRememberMe } from "@/integrations/supabase/remember-me";
 import {
-  getLoginEmail,
   normalizePhone,
   phoneToEmail,
   rememberLoginEmail,
-  validatePassword,
   validatePhonePassword,
 } from "@/lib/phone";
 
@@ -98,15 +96,16 @@ function Index() {
     setError(null);
 
     const form = new FormData(e.currentTarget);
+    const rawPhone = String(form.get("phone") ?? "").trim();
     const password = String(form.get("password") ?? "");
 
-    const invalid = validatePassword(password);
+    const invalid = validatePhonePassword(rawPhone, password);
     if (invalid) {
       setError(invalid);
       return;
     }
 
-    const email = getLoginEmail();
+    const email = phoneToEmail(rawPhone);
     setLoading(true);
     // Define ANTES de entrar: é neste momento que a sessão é gravada, e o
     // storage do Supabase lê esta preferência para decidir onde guardá-la.
@@ -143,6 +142,14 @@ function Index() {
         {view === "login" ? (
           <form className="mt-10 space-y-5" onSubmit={handleLogin}>
             <IconField
+              label="Número de telefone"
+              name="phone"
+              type="tel"
+              placeholder="900 000 000"
+              icon={<Phone className="h-4.5 w-4.5" strokeWidth={2} aria-hidden="true" />}
+              required
+            />
+            <IconField
               label="Palavra-passe"
               name="password"
               type="password"
@@ -151,7 +158,7 @@ function Index() {
               required
             />
             <p className="text-xs text-muted-foreground">
-              Para entrar, basta colocar a sua palavra-passe.
+              Entre com o número de telefone usado no registo e a sua palavra-passe.
             </p>
 
             <div className="flex items-center justify-between pt-1 text-sm">
