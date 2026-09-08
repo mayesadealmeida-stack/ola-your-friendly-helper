@@ -54,7 +54,19 @@ export function getLoginEmail(): string {
 
 export function getAdminLoginEmail(): string {
   const configuredEmail = import.meta.env["VITE_ADMIN_EMAIL"]?.trim();
-  return configuredEmail || getRememberedLoginEmail() || DEFAULT_ADMIN_EMAIL;
+  // Nunca usar o último e-mail de um utilizador normal como identidade do
+  // administrador. Isso fazia o painel tentar autenticar a conta errada
+  // depois de alguém entrar na aplicação principal.
+  return configuredEmail || DEFAULT_ADMIN_EMAIL;
+}
+
+export function adminIdentifierToEmail(identifier: string): string | null {
+  const value = identifier.trim();
+  if (!value) return null;
+  if (value.includes("@")) return value.toLowerCase();
+
+  const phoneError = validatePhoneNumber(value);
+  return phoneError ? null : phoneToEmail(value);
 }
 
 export function validatePassword(password: string): string | null {

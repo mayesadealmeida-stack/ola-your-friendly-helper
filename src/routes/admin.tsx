@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { getAdminLoginEmail, validatePassword } from "@/lib/phone";
+import { adminIdentifierToEmail, getAdminLoginEmail, validatePassword } from "@/lib/phone";
 import { useAdminFinance, useIsAdmin, type WalletTx } from "@/hooks/use-admin";
 import { useAdminPosts, type AdminPost, type NewAdminPost } from "@/hooks/use-admin-posts";
 import { usePlans, type InvestmentPlan } from "@/hooks/use-plans";
@@ -810,10 +810,19 @@ function SegurancaTab() {
     }
 
     setBusy(true);
-    const { error: loginError } = await supabase.auth.signInWithPassword({
-      email: getAdminLoginEmail(),
-      password: currentPassword,
-    });
+    const { data: currentUserData, error: userError } = await supabase.auth.getUser();
+    const currentEmail = currentUserData.user?.email;
+    let loginError: { message: string } | null = userError;
+    if (!loginError && currentEmail) {
+      const result = await supabase.auth.signInWithPassword({
+        email: currentEmail,
+        password: currentPassword,
+      });
+      loginError = result.error;
+    }
+    if (!currentEmail && !loginError) {
+      loginError = new Error("Sessão do administrador indisponível.");
+    }
 
     if (loginError) {
       setBusy(false);
@@ -1629,6 +1638,7 @@ function AdminLoginForm({ onAuthenticated }: { onAuthenticated: () => void }) {
     setError(null);
 
     const form = new FormData(e.currentTarget);
+    const identifier = String(form.get("identifier") ?? "");
     const password = String(form.get("password") ?? "");
 
     const invalid = validatePassword(password);
@@ -1637,15 +1647,23 @@ function AdminLoginForm({ onAuthenticated }: { onAuthenticated: () => void }) {
       return;
     }
 
+    const email = adminIdentifierToEmail(identifier);
+    if (!email) {
+      setError("Digite o e-mail do administrador ou um número de telefone angolano válido.");
+      return;
+    }
+
     setLoading(true);
     const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: getAdminLoginEmail(),
+      email,
       password,
     });
     setLoading(false);
 
     if (signInError) {
-      setError("Telefone ou senha incorretos.");
+      setError(
+        "Não foi possível entrar. Verifique o e-mail/número e a palavra-passe da conta administradora.",
+      );
       return;
     }
 
@@ -1670,10 +1688,36 @@ function AdminLoginForm({ onAuthenticated }: { onAuthenticated: () => void }) {
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div>
             <label
+              htmlFor="admin-identifier"
+              className="mb-1.5 block text-xs font-medium text-muted-foreground"
+            >
+              E-mail ou número do administrador
+            </label>
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3.5 py-3">
+              <UserIcon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <input
+                id="admin-identifier"
+                name="identifier"
+                type="text"
+                inputMode="text"
+                autoComplete="username"
+                defaultValue={getAdminLoginEmail()}
+                required
+                className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+              />
+            </div>
+            <p className="mt-1.5 text-[11px] text-muted-foreground">
+              Pode usar o e-mail <strong>admin@groupmobil.app</strong> ou o número associado à
+              conta.
+            </p>
+          </div>
+
+          <div>
+            <label
               htmlFor="admin-password"
               className="mb-1.5 block text-xs font-medium text-muted-foreground"
             >
-              Senha
+              Palavra-passe
             </label>
             <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3.5 py-3">
               <Lock className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />

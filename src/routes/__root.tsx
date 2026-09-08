@@ -151,11 +151,18 @@ function RootComponent() {
 
   useEffect(() => {
     const isAdmin = pathname === "/admin";
-    const manifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]');
+    const manifests = Array.from(
+      document.querySelectorAll<HTMLLinkElement>('link[rel="manifest"]'),
+    );
+    const manifest = manifests[0];
     const icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
     const appleIcon = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]');
 
     if (manifest) manifest.href = isAdmin ? "/admin-manifest.json" : "/manifest.json";
+    // A rota /admin tem um manifesto próprio no SSR. Depois da hidratação,
+    // mantém apenas um manifesto no documento para o navegador não escolher
+    // aleatoriamente o manifesto público durante a instalação.
+    for (const duplicate of manifests.slice(1)) duplicate.remove();
     if (icon) {
       icon.href = isAdmin ? "/admin-icon.svg" : "/favicon.ico";
       icon.type = isAdmin ? "image/svg+xml" : "image/x-icon";
