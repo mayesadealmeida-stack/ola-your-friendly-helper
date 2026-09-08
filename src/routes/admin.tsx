@@ -11,7 +11,6 @@ import {
   ImagePlus,
   Loader2,
   Lock,
-  Phone,
   PlusCircle,
   RefreshCw,
   ShieldCheck,
@@ -24,7 +23,7 @@ import {
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { phoneToEmail, validatePhonePassword } from "@/lib/phone";
+import { getAdminLoginEmail, validatePassword } from "@/lib/phone";
 import { useAdminFinance, useIsAdmin, type WalletTx } from "@/hooks/use-admin";
 import { usePlans, type InvestmentPlan } from "@/hooks/use-plans";
 import { PAYMENT_METHOD_INFO, type PaymentMethodKey } from "@/hooks/use-payment-methods";
@@ -1142,10 +1141,9 @@ function AdminLoginForm({ onAuthenticated }: { onAuthenticated: () => void }) {
     setError(null);
 
     const form = new FormData(e.currentTarget);
-    const rawPhone = String(form.get("phone") ?? "").trim();
     const password = String(form.get("password") ?? "");
 
-    const invalid = validatePhonePassword(rawPhone, password);
+    const invalid = validatePassword(password);
     if (invalid) {
       setError(invalid);
       return;
@@ -1153,7 +1151,7 @@ function AdminLoginForm({ onAuthenticated }: { onAuthenticated: () => void }) {
 
     setLoading(true);
     const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: phoneToEmail(rawPhone),
+      email: getAdminLoginEmail(),
       password,
     });
     setLoading(false);
@@ -1182,28 +1180,6 @@ function AdminLoginForm({ onAuthenticated }: { onAuthenticated: () => void }) {
         </div>
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-          <div>
-            <label
-              htmlFor="admin-phone"
-              className="mb-1.5 block text-xs font-medium text-muted-foreground"
-            >
-              Número de telefone
-            </label>
-            <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3.5 py-3">
-              <Phone className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-              <input
-                id="admin-phone"
-                name="phone"
-                type="tel"
-                inputMode="tel"
-                autoComplete="tel"
-                placeholder="900 000 000"
-                required
-                className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-              />
-            </div>
-          </div>
-
           <div>
             <label
               htmlFor="admin-password"
