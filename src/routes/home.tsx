@@ -22,6 +22,7 @@ import { UserAvatarLink } from "@/components/user-avatar";
 import { useProfile } from "@/hooks/use-profile";
 import { useWallet } from "@/hooks/use-wallet";
 import { useKyc } from "@/hooks/use-kyc";
+import { useNotifications } from "@/hooks/use-notifications";
 import { usePosts, relativeTime, type Post, type PostCategory } from "@/hooks/use-posts";
 import logo from "/logo-group-mobil.webp";
 import logoMark from "/logo-group-mobil-mark.webp";
@@ -40,11 +41,6 @@ export const Route = createFileRoute("/home")({
 });
 
 // ---------------------------------------------------------------------------
-
-function useNotifications() {
-  // TODO: ligar à tabela de notificações real no Supabase.
-  return { unreadCount: 0, loading: false };
-}
 
 type Movement = {
   id: string;

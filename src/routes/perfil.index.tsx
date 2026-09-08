@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import {
   BadgeCheck,
+  Bell,
   Camera,
   Check,
   Copy,
@@ -11,6 +12,7 @@ import {
   Loader2,
   LogOut,
   MessageCircle,
+  Receipt,
   Settings,
   ShieldCheck,
   TrendingUp,
@@ -20,6 +22,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useProfile } from "@/hooks/use-profile";
 import { useKyc, kycStatusLabel } from "@/hooks/use-kyc";
+import { useNotifications } from "@/hooks/use-notifications";
 import { useCompliance } from "@/hooks/use-compliance";
 import { useWallet } from "@/hooks/use-wallet";
 import { LEVEL_META } from "@/lib/compliance";
@@ -57,6 +60,7 @@ function PerfilPage() {
   const queryClient = useQueryClient();
   const { userId, profile, loading, notAuthenticated, uploadAvatar } = useProfile();
   const { kyc } = useKyc();
+  const { unreadCount } = useNotifications();
   const { stats: complianceStats } = useCompliance();
   const wallet = useWallet();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -231,6 +235,13 @@ function PerfilPage() {
                 to="/perfil/kyc"
                 badge={kycBadge(kyc?.status)}
               />
+              <AccountTile
+                icon={Bell}
+                label="Notificações"
+                to="/notificacoes"
+                badge={notificationsBadge(unreadCount)}
+              />
+              <AccountTile icon={Receipt} label="Faturamento" to="/perfil/pagamento" />
               <AccountTile icon={TrendingUp} label="Nível" to="/nivel" />
               <AccountTile icon={Settings} label="Configurações" to="/perfil/configuracoes" />
               <AccountTile icon={HelpCircle} label="Ajuda" to="/assistente" />
@@ -291,6 +302,11 @@ function kycBadge(status: string | undefined): MenuBadge {
     default:
       return { text: kycStatusLabel("not_started"), tone: "muted" };
   }
+}
+
+function notificationsBadge(count: number): MenuBadge | undefined {
+  if (count <= 0) return undefined;
+  return { text: count > 9 ? "9+" : String(count), tone: "red" };
 }
 
 function AboutSupportCard() {

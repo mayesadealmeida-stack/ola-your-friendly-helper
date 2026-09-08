@@ -1,19 +1,18 @@
 import { Link } from "@tanstack/react-router";
-import { Home as HomeIcon, Users, Bell, User, type LucideIcon } from "lucide-react";
+import { Home as HomeIcon, Users, User, type LucideIcon } from "lucide-react";
 
-export type BottomNavKey = "home" | "grupos" | "notificacoes" | "perfil";
+export type BottomNavKey = "home" | "grupos" | "perfil";
 
-const ITEMS: { key: BottomNavKey; icon: LucideIcon; label: string; to?: string }[] = [
+const ITEMS: { key: BottomNavKey; icon: LucideIcon; label: string; to: string }[] = [
   { key: "home", icon: HomeIcon, label: "Home", to: "/home" },
   { key: "grupos", icon: Users, label: "Grupos", to: "/grupos" },
-  { key: "notificacoes", icon: Bell, label: "Notificações" },
   { key: "perfil", icon: User, label: "Perfil", to: "/perfil" },
 ];
 
 export function BottomNav({ active }: { active: BottomNavKey }) {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/95 backdrop-blur">
-      <div className="mx-auto flex max-w-md items-stretch justify-between px-2 py-2">
+      <div className="mx-auto flex max-w-md items-stretch justify-around px-2 py-2">
         {ITEMS.map((item) => (
           <NavItem key={item.key} item={item} active={item.key === active} />
         ))}
@@ -28,8 +27,8 @@ function NavItem({ item, active }: { item: (typeof ITEMS)[number]; active: boole
     active ? "text-brand-green-dark" : "text-muted-foreground hover:text-foreground"
   }`;
 
-  const content = (
-    <>
+  return (
+    <Link to={item.to} className={className}>
       <Icon
         className={`h-5 w-5 ${active ? "" : "opacity-70"}`}
         strokeWidth={active ? 2.25 : 2}
@@ -39,21 +38,6 @@ function NavItem({ item, active }: { item: (typeof ITEMS)[number]; active: boole
         {item.label}
       </span>
       {active && <span className="mt-0.5 h-1 w-1 rounded-full bg-brand-green" />}
-    </>
-  );
-
-  if (item.to) {
-    return (
-      <Link to={item.to} className={className}>
-        {content}
-      </Link>
-    );
-  }
-
-  // Ainda sem ecrã próprio: mostra a opção mas não navega para lado nenhum.
-  return (
-    <button type="button" className={`${className} cursor-default`} aria-disabled="true">
-      {content}
-    </button>
+    </Link>
   );
 }
