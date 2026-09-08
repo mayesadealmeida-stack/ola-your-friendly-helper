@@ -15,6 +15,7 @@ import { Route as AssistenteRouteImport } from './routes/assistente'
 import { Route as GruposRouteImport } from './routes/grupos'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as NivelRouteImport } from './routes/nivel'
+import { Route as NotificacoesRouteImport } from './routes/notificacoes'
 import { Route as PerfilRouteImport } from './routes/perfil'
 import { Route as GruposIndexRouteImport } from './routes/grupos.index'
 import { Route as GruposGroupIdRouteImport } from './routes/grupos.$groupId'
@@ -52,6 +53,11 @@ const HomeRoute = HomeRouteImport.update({
 const NivelRoute = NivelRouteImport.update({
   id: '/nivel',
   path: '/nivel',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificacoesRoute = NotificacoesRouteImport.update({
+  id: '/notificacoes',
+  path: '/notificacoes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PerfilRoute = PerfilRouteImport.update({
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/grupos': typeof GruposRouteWithChildren
   '/home': typeof HomeRoute
   '/nivel': typeof NivelRoute
+  '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRouteWithChildren
   '/grupos/$groupId': typeof GruposGroupIdRoute
   '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
@@ -117,6 +124,7 @@ export interface FileRoutesByTo {
   '/assistente': typeof AssistenteRoute
   '/home': typeof HomeRoute
   '/nivel': typeof NivelRoute
+  '/notificacoes': typeof NotificacoesRoute
   '/grupos/$groupId': typeof GruposGroupIdRoute
   '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
   '/perfil/depositar': typeof PerfilDepositarRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/grupos': typeof GruposRouteWithChildren
   '/home': typeof HomeRoute
   '/nivel': typeof NivelRoute
+  '/notificacoes': typeof NotificacoesRoute
   '/perfil': typeof PerfilRouteWithChildren
   '/grupos/$groupId': typeof GruposGroupIdRoute
   '/perfil/configuracoes': typeof PerfilConfiguracoesRoute
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/grupos'
     | '/home'
     | '/nivel'
+    | '/notificacoes'
     | '/perfil'
     | '/grupos/$groupId'
     | '/perfil/configuracoes'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/assistente'
     | '/home'
     | '/nivel'
+    | '/notificacoes'
     | '/grupos/$groupId'
     | '/perfil/configuracoes'
     | '/perfil/depositar'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
     | '/grupos'
     | '/home'
     | '/nivel'
+    | '/notificacoes'
     | '/perfil'
     | '/grupos/$groupId'
     | '/perfil/configuracoes'
@@ -198,6 +210,7 @@ export interface RootRouteChildren {
   GruposRoute: typeof GruposRouteWithChildren
   HomeRoute: typeof HomeRoute
   NivelRoute: typeof NivelRoute
+  NotificacoesRoute: typeof NotificacoesRoute
   PerfilRoute: typeof PerfilRouteWithChildren
 }
 
@@ -243,6 +256,13 @@ declare module '@tanstack/react-router' {
       path: '/nivel'
       fullPath: '/nivel'
       preLoaderRoute: typeof NivelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notificacoes': {
+      id: '/notificacoes'
+      path: '/notificacoes'
+      fullPath: '/notificacoes'
+      preLoaderRoute: typeof NotificacoesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/perfil': {
@@ -343,6 +363,7 @@ const rootRouteChildren: RootRouteChildren = {
   GruposRoute: GruposRouteWithChildren,
   HomeRoute: HomeRoute,
   NivelRoute: NivelRoute,
+  NotificacoesRoute: NotificacoesRoute,
   PerfilRoute: PerfilRouteWithChildren,
 }
 export const routeTree = rootRouteImport

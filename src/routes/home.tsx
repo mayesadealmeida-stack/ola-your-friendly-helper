@@ -24,7 +24,6 @@ import { useWallet } from "@/hooks/use-wallet";
 import { useKyc } from "@/hooks/use-kyc";
 import { useNotifications } from "@/hooks/use-notifications";
 import { usePosts, relativeTime, type Post, type PostCategory } from "@/hooks/use-posts";
-import logo from "/logo-group-mobil.webp";
 import logoMark from "/logo-group-mobil-mark.webp";
 
 export const Route = createFileRoute("/home")({
@@ -132,16 +131,45 @@ function TopBar({ unreadCount }: { unreadCount: number }) {
   );
 }
 
+const HERO_SLIDES = [
+  "/banners/banner-1.jpg",
+  "/banners/banner-2.jpg",
+  "/banners/banner-3.png",
+  "/banners/banner-4.jpg",
+];
+
 function HeroBanner() {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setIndex((i) => (i + 1) % HERO_SLIDES.length), 4500);
+    return () => clearInterval(id);
+  }, []);
+
   return (
-    <div
-      className="relative flex h-40 items-center justify-center overflow-hidden bg-navy-900 px-6"
-      style={{
-        background:
-          "radial-gradient(120% 140% at 50% -10%, oklch(0.3 0.09 261.5) 0%, oklch(0.18 0.05 261.5) 70%)",
-      }}
-    >
-      <img src={logo} alt="Group Mobil" className="h-10 w-auto opacity-95 sm:h-12" />
+    <div className="relative h-40 overflow-hidden bg-navy-900">
+      {HERO_SLIDES.map((src, i) => (
+        <img
+          key={src}
+          src={src}
+          alt=""
+          aria-hidden="true"
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
+            i === index ? "opacity-100" : "opacity-0"
+          }`}
+        />
+      ))}
+
+      <div className="absolute inset-x-0 bottom-3 flex justify-center gap-1.5">
+        {HERO_SLIDES.map((src, i) => (
+          <span
+            key={src}
+            className={`h-1.5 rounded-full transition-all ${
+              i === index ? "w-4 bg-brand-green" : "w-1.5 bg-white/50"
+            }`}
+          />
+        ))}
+      </div>
     </div>
   );
 }
