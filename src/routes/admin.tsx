@@ -5,12 +5,17 @@ import {
   ArrowUpRight,
   CheckCircle2,
   ChevronLeft,
+  Copy,
   ExternalLink,
+  FileText,
   Loader2,
+  PlusCircle,
   RefreshCw,
   ShieldCheck,
+  User as UserIcon,
   Users,
   Wallet,
+  X,
   XCircle,
 } from "lucide-react";
 import { useAdminFinance, useIsAdmin, type WalletTx } from "@/hooks/use-admin";
@@ -38,13 +43,15 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-type TabKey = "resumo" | "pagamentos" | "saques" | "contribuicoes";
+type TabKey = "resumo" | "pagamentos" | "saques" | "contribuicoes" | "usuarios" | "faturas";
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: "resumo", label: "Resumo" },
   { key: "pagamentos", label: "Pagamentos" },
   { key: "saques", label: "Levantamentos" },
   { key: "contribuicoes", label: "Contribuições" },
+  { key: "usuarios", label: "Usuários" },
+  { key: "faturas", label: "Faturas" },
 ];
 
 function methodLabel(method: string | null): string {
@@ -119,13 +126,13 @@ function AdminPage() {
         </header>
 
         <main className="-mt-10 space-y-4 px-5">
-          <nav className="flex gap-1 rounded-2xl bg-card p-1 shadow-xl shadow-navy-900/10">
+          <nav className="flex gap-1 overflow-x-auto rounded-2xl bg-card p-1 shadow-xl shadow-navy-900/10">
             {TABS.map((t) => (
               <button
                 key={t.key}
                 type="button"
                 onClick={() => setTab(t.key)}
-                className={`flex-1 rounded-xl px-2 py-2 text-[11px] font-semibold transition ${
+                className={`shrink-0 rounded-xl px-3 py-2 text-[11px] font-semibold transition ${
                   tab === t.key
                     ? "bg-navy-900 text-white"
                     : "text-muted-foreground hover:bg-secondary"
@@ -146,6 +153,8 @@ function AdminPage() {
               {tab === "pagamentos" && <MovimentosTab finance={finance} kind="deposito" />}
               {tab === "saques" && <MovimentosTab finance={finance} kind="levantamento" />}
               {tab === "contribuicoes" && <ContribuicoesTab finance={finance} />}
+              {tab === "usuarios" && <UsuariosTab finance={finance} />}
+              {tab === "faturas" && <FaturasTab finance={finance} />}
             </>
           )}
         </main>
@@ -501,5 +510,316 @@ function ContribRow({
       </div>
       <p className="font-display text-sm font-bold text-card-foreground">{formatKz(amount)}</p>
     </article>
+  );
+}
+
+function computeUserBalances(transactions: WalletTx[]): Record<string, number> {
+  const balances: Record<string, number> = {};
+  for (const t of transactions) {
+    if (t.status !== "confirmado") continue;
+    balances[t.user_id] = (balances[t.user_id] ?? 0) + Number(t.amount);
+  }
+  return balances;
+}
+
+function UsuariosTab({ finance }: { finance: Finance }) {
+  const balances = useMemo(() => computeUserBalances(finance.transactions), [finance.transactions]);
+  const people = useMemo(
+    () =>
+      Object.values(finance.profiles).sort((a, b) =>
+        (a.full_name || a.username || "").localeCompare(b.full_name || b.username || ""),
+      ),
+    [finance.profiles],
+  );
+  const [grantingId, setGrantingId] = useState<string | null>(null);
+
+  return (
+    <div className="space-y-3">
+      <p className="px-1 text-xs text-muted-foreground">{people.length} conta(s) registada(s).</p>
+
+      {people.map((p) => (
+        <article key={p.id} className="rounded-2xl bg-card p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-navy-900">
+              <UserIcon className="h-4.5 w-4.5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold text-card-foreground">
+                {p.full_name?.trim() || p.username?.trim() || "Conta sem nome"}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">{p.phone || "—"}</p>
+            </div>
+            <p className="font-display text-sm font-bold text-card-foreground">
+              {formatKz(balances[p.id] ?? 0)}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigator.clipboard.writeText(p.id)}
+            className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground"
+          >
+            <Copy className="h-3 w-3" aria-hidden="true" />
+            ID: {p.id.slice(0, 8).toUpperCase()}
+          </button>
+
+          {grantingId === p.id ? (
+            <GrantBalanceForm
+              onCancel={() => setGrantingId(null)}
+              onSubmit={async (amount, reason) => {
+                const { error } = await finance.grantBalance(p.id, amount, reason);
+                if (!error) setGrantingId(null);
+                return { error };
+              }}
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setGrantingId(p.id)}
+              className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-secondary py-2.5 text-xs font-semibold text-navy-900 transition hover:bg-secondary/70"
+            >
+              <PlusCircle className="h-3.5 w-3.5" aria-hidden="true" />
+              Dar saldo
+            </button>
+          )}
+        </article>
+      ))}
+    </div>
+  );
+}
+
+function GrantBalanceForm({
+  onCancel,
+  onSubmit,
+}: {
+  onCancel: () => void;
+  onSubmit: (amount: number, reason: string) => Promise<{ error: string | null }>;
+}) {
+  const [amount, setAmount] = useState("");
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit() {
+    setError(null);
+    const value = Number(amount.replace(/[^\d-]/g, ""));
+    if (!value) {
+      setError("Indique um valor (pode ser negativo, para retirar).");
+      return;
+    }
+    if (!reason.trim()) {
+      setError("Indique o motivo.");
+      return;
+    }
+    setBusy(true);
+    const { error: err } = await onSubmit(value, reason.trim());
+    setBusy(false);
+    if (err) setError(err);
+  }
+
+  return (
+    <div className="mt-3 space-y-2 border-t border-border pt-3">
+      <input
+        type="text"
+        inputMode="numeric"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value.replace(/[^\d-]/g, ""))}
+        placeholder="Valor em Kz (negativo para retirar)"
+        className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:border-brand-green"
+      />
+      <input
+        type="text"
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+        placeholder="Motivo"
+        className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:border-brand-green"
+      />
+      {error && <p className="text-[11px] font-medium text-destructive">{error}</p>}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 rounded-xl bg-secondary py-2 text-xs font-semibold text-muted-foreground"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={busy}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand-green py-2 text-xs font-semibold text-primary-foreground disabled:opacity-60"
+        >
+          {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
+          Confirmar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function FaturasTab({ finance }: { finance: Finance }) {
+  const invoices = useMemo(
+    () =>
+      finance.transactions.filter(
+        (t) => t.status === "confirmado" && (t.type === "deposito" || t.type === "levantamento"),
+      ),
+    [finance.transactions],
+  );
+  const [viewing, setViewing] = useState<WalletTx | null>(null);
+
+  return (
+    <div className="space-y-3">
+      <p className="px-1 text-xs text-muted-foreground">
+        Faturas de depósitos e levantamentos já aprovados.
+      </p>
+
+      {invoices.length === 0 ? (
+        <Empty text="Ainda não há faturas emitidas." />
+      ) : (
+        invoices.map((tx) => {
+          const profile = finance.profiles[tx.user_id];
+          const isIn = tx.type === "deposito";
+          return (
+            <article
+              key={tx.id}
+              className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-sm"
+            >
+              <span
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                  isIn ? "bg-brand-green/15 text-brand-green-dark" : "bg-secondary text-navy-900"
+                }`}
+              >
+                {isIn ? (
+                  <ArrowDownLeft className="h-4.5 w-4.5" aria-hidden="true" />
+                ) : (
+                  <ArrowUpRight className="h-4.5 w-4.5" aria-hidden="true" />
+                )}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-card-foreground">
+                  {profile?.full_name?.trim() || "Conta sem nome"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {isIn ? "Depósito" : "Levantamento"} · {formatDate(tx.created_at)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setViewing(tx)}
+                className="flex items-center gap-1.5 rounded-xl bg-secondary px-3 py-2 text-xs font-semibold text-navy-900 transition hover:bg-secondary/70"
+              >
+                <FileText className="h-3.5 w-3.5" aria-hidden="true" />
+                Ver
+              </button>
+            </article>
+          );
+        })
+      )}
+
+      {viewing && (
+        <AdminInvoiceSheet
+          tx={viewing}
+          userName={
+            finance.profiles[viewing.user_id]?.full_name?.trim() ||
+            finance.profiles[viewing.user_id]?.username?.trim() ||
+            "Participante"
+          }
+          onClose={() => setViewing(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function AdminInvoiceSheet({
+  tx,
+  userName,
+  onClose,
+}: {
+  tx: WalletTx;
+  userName: string;
+  onClose: () => void;
+}) {
+  const invoiceNumber = `GM-${tx.id.slice(0, 8).toUpperCase()}`;
+  const isIn = tx.type === "deposito";
+
+  return (
+    <div
+      className="fixed inset-0 z-30 flex items-end justify-center bg-black/50 px-4 pb-6 sm:items-center"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm overflow-hidden rounded-3xl bg-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between bg-navy-900 px-6 py-5">
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/logo-group-mobil-mark.webp"
+              alt="Group Mobil"
+              className="h-8 w-8 object-contain"
+            />
+            <p className="font-display text-sm font-bold text-white">Group Mobil</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fechar"
+            className="text-white/70 hover:text-white"
+          >
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="px-6 py-6">
+          <div className="flex items-center justify-between">
+            <p className="font-display text-lg font-bold text-slate-900">
+              Fatura de {isIn ? "depósito" : "levantamento"}
+            </p>
+            <span className="rounded-full bg-brand-green/15 px-3 py-1 text-[11px] font-semibold text-brand-green-dark">
+              Aprovado
+            </span>
+          </div>
+          <p className="mt-0.5 text-xs text-slate-400">Nº {invoiceNumber}</p>
+
+          <div className="mt-5 space-y-2.5 border-y border-dashed border-slate-200 py-4 text-sm">
+            <div className="flex justify-between">
+              <span className="text-slate-500">Utilizador</span>
+              <span className="font-medium text-slate-900">{userName}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Data do pedido</span>
+              <span className="font-medium text-slate-900">{formatDate(tx.created_at)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Data de aprovação</span>
+              <span className="font-medium text-slate-900">
+                {tx.confirmed_at ? formatDate(tx.confirmed_at) : "—"}
+              </span>
+            </div>
+            {tx.method && (
+              <div className="flex justify-between">
+                <span className="text-slate-500">Método</span>
+                <span className="font-medium text-slate-900">{methodLabel(tx.method)}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-4 flex items-center justify-between">
+            <span className="text-sm text-slate-500">Valor</span>
+            <span className="font-display text-2xl font-bold text-slate-900">
+              Kz{" "}
+              {formatKz(Math.abs(Number(tx.amount)))
+                .replace("Kz", "")
+                .trim()}
+            </span>
+          </div>
+
+          <p className="mt-6 text-center text-[11px] text-slate-400">
+            Fatura gerada automaticamente pela Group Mobil.
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }

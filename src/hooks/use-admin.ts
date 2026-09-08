@@ -77,11 +77,7 @@ async function fetchAdminData(): Promise<AdminData> {
         .order("created_at", { ascending: false })
         .limit(300),
       supabase.from("profiles").select("*"),
-      supabase
-        .from("contributions")
-        .select("*")
-        .order("due_date", { ascending: false })
-        .limit(300),
+      supabase.from("contributions").select("*").order("due_date", { ascending: false }).limit(300),
       supabase.from("group_participants").select("id, user_id, display_name"),
       supabase.from("groups").select("id, name"),
     ]);
@@ -154,6 +150,23 @@ export function useAdminFinance(enabled: boolean) {
     return data?.signedUrl ?? null;
   }, []);
 
+  const grantBalance = useCallback(
+    async (userId: string, amount: number, reason: string): Promise<{ error: string | null }> => {
+      const { error } = await supabase.rpc(
+        "admin_grant_balance" as never,
+        {
+          p_user_id: userId,
+          p_amount: amount,
+          p_reason: reason,
+        } as never,
+      );
+      if (error) return { error: error.message };
+      await refresh();
+      return { error: null };
+    },
+    [refresh],
+  );
+
   return {
     summary: query.data?.summary ?? EMPTY_SUMMARY,
     transactions: query.data?.transactions ?? [],
@@ -163,5 +176,6 @@ export function useAdminFinance(enabled: boolean) {
     refresh,
     review,
     proofUrl,
+    grantBalance,
   };
 }
