@@ -1,7 +1,7 @@
 {
   "name": "Group Mobil",
   "short_name": "Group Mobil",
-  "description": "Group Mobil: crie o seu grupo de kixikila, convide quem confia e acompanhe cada contribuição e cada turno.",
+  "description": "Group Mobil: complete tarefas de venda, acompanhe os seus investimentos e resgate os seus ganhos.",
   "id": "/home",
   "start_url": "/home",
   "scope": "/",

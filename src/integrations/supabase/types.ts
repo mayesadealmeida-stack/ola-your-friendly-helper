@@ -34,8 +34,7 @@ export type Database = {
           new_level?: Database["public"]["Enums"]["compliance_level"] | null
           new_rate?: number | null
           previous_level?:
-            | Database["public"]["Enums"]["compliance_level"]
-            | null
+            Database["public"]["Enums"]["compliance_level"] | null
           previous_rate?: number | null
           reason?: string
           source?: string
@@ -48,8 +47,7 @@ export type Database = {
           new_level?: Database["public"]["Enums"]["compliance_level"] | null
           new_rate?: number | null
           previous_level?:
-            | Database["public"]["Enums"]["compliance_level"]
-            | null
+            Database["public"]["Enums"]["compliance_level"] | null
           previous_rate?: number | null
           reason?: string
           source?: string
@@ -157,8 +155,7 @@ export type Database = {
           paid_at: string | null
           participant_id: string
           payment_method:
-            | Database["public"]["Enums"]["payment_method_key"]
-            | null
+            Database["public"]["Enums"]["payment_method_key"] | null
           round_number: number
           status: Database["public"]["Enums"]["contribution_status"]
         }
@@ -171,8 +168,7 @@ export type Database = {
           paid_at?: string | null
           participant_id: string
           payment_method?:
-            | Database["public"]["Enums"]["payment_method_key"]
-            | null
+            Database["public"]["Enums"]["payment_method_key"] | null
           round_number: number
           status?: Database["public"]["Enums"]["contribution_status"]
         }
@@ -185,8 +181,7 @@ export type Database = {
           paid_at?: string | null
           participant_id?: string
           payment_method?:
-            | Database["public"]["Enums"]["payment_method_key"]
-            | null
+            Database["public"]["Enums"]["payment_method_key"] | null
           round_number?: number
           status?: Database["public"]["Enums"]["contribution_status"]
         }
@@ -415,6 +410,114 @@ export type Database = {
           started_at?: string
           status?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      task_cycles: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          current_round: number
+          id: string
+          locked_amount: number
+          redeemed_at: string | null
+          reward_amount: number
+          rounds_required: number
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          current_round?: number
+          id?: string
+          locked_amount?: number
+          redeemed_at?: string | null
+          reward_amount?: number
+          rounds_required?: number
+          status?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          current_round?: number
+          id?: string
+          locked_amount?: number
+          redeemed_at?: string | null
+          reward_amount?: number
+          rounds_required?: number
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      task_orders: {
+        Row: {
+          created_at: string
+          cycle_id: string
+          id: string
+          price: number
+          product_id: string
+          round_number: number
+          reward: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          cycle_id: string
+          id?: string
+          price: number
+          product_id: string
+          round_number: number
+          reward: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          cycle_id?: string
+          id?: string
+          price?: number
+          product_id?: string
+          round_number?: number
+          reward?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      task_products: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          price: number
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          price: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          price?: number
         }
         Relationships: []
       }
@@ -799,8 +902,7 @@ export type Database = {
           paid_at: string | null
           participant_id: string
           payment_method:
-            | Database["public"]["Enums"]["payment_method_key"]
-            | null
+            Database["public"]["Enums"]["payment_method_key"] | null
           round_number: number
           status: Database["public"]["Enums"]["contribution_status"]
         }
@@ -855,8 +957,7 @@ export type Database = {
           paid_at: string | null
           participant_id: string
           payment_method:
-            | Database["public"]["Enums"]["payment_method_key"]
-            | null
+            Database["public"]["Enums"]["payment_method_key"] | null
           round_number: number
           status: Database["public"]["Enums"]["contribution_status"]
         }
@@ -958,6 +1059,14 @@ export type Database = {
         Args: { p_investment_id: string }
         Returns: Database["public"]["Tables"]["user_investments"]["Row"]
       }
+      redeem_task_cycle: {
+        Args: { p_cycle_id: string }
+        Returns: Database["public"]["Tables"]["task_cycles"]["Row"]
+      }
+      start_task_round: {
+        Args: { p_product_id: string }
+        Returns: Database["public"]["Tables"]["task_cycles"]["Row"]
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
@@ -970,11 +1079,7 @@ export type Database = {
         | "obligation_resolved"
         | "rule_violation"
       compliance_level:
-        | "iniciante"
-        | "regular"
-        | "confiavel"
-        | "avancado"
-        | "excelente"
+        "iniciante" | "regular" | "confiavel" | "avancado" | "excelente"
       contribution_status: "pendente" | "confirmada" | "atrasada"
       group_frequency: "semanal" | "mensal"
       group_status: "aberto" | "completo" | "andamento" | "encerrado"
@@ -987,6 +1092,8 @@ export type Database = {
         | "levantamento"
         | "contribuicao_grupo"
         | "recebimento_grupo"
+        | "compra_tarefa"
+        | "resgate_tarefa"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1029,8 +1136,7 @@ export type Tables<
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
@@ -1054,8 +1160,7 @@ export type TablesInsert<
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-    | keyof DefaultSchema["Tables"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Tables"] | { schema: keyof DatabaseWithoutInternals },
   TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
@@ -1079,8 +1184,7 @@ export type TablesUpdate<
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
+    keyof DefaultSchema["Enums"] | { schema: keyof DatabaseWithoutInternals },
   EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }

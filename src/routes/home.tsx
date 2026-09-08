@@ -7,11 +7,11 @@ import {
   ArrowDownLeft,
   ArrowUpLeft,
   Briefcase,
-  Users,
   BadgeCheck,
   HelpCircle,
   ShieldCheck,
   HandCoins,
+  ListChecks,
   type LucideIcon,
 } from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
@@ -28,7 +28,7 @@ export const Route = createFileRoute("/home")({
       { title: "Group Mobil — Início" },
       {
         name: "description",
-        content: "A sua conta Group Mobil: saldo, movimentações e grupos num só lugar.",
+        content: "A sua conta Group Mobil: saldo, tarefas e investimentos num só lugar.",
       },
     ],
   }),
@@ -227,7 +227,7 @@ function WalletCard({
 
 function ShortcutsRow() {
   const items: { icon: LucideIcon; label: string; to: string }[] = [
-    { icon: Users, label: "Grupos", to: "/grupos" },
+    { icon: ListChecks, label: "Tarefas", to: "/grupos" },
     { icon: BadgeCheck, label: "Verificação", to: "/perfil/kyc" },
     { icon: HelpCircle, label: "Suporte", to: "/assistente" },
   ];
