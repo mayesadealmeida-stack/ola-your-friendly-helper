@@ -145,7 +145,7 @@ function TasksPage() {
                     </p>
                   </div>
                   <span className="rounded-full bg-brand-green/15 px-2.5 py-1 text-[10px] font-bold text-brand-green-dark">
-                    +9% no resgate
+                    +15% no resgate
                   </span>
                 </div>
 
@@ -234,51 +234,64 @@ function WalletSummary({
 function RoundProgress({ cycle }: { cycle: ReturnType<typeof useTasks>["cycle"] }) {
   const completed = cycle?.current_round ?? 0;
   const isReady = cycle?.status === "completed";
+  const nextRound = Math.min(completed + 1, 3);
 
   return (
-    <section className="rounded-3xl border border-border bg-card p-5">
+    <section className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-card via-card to-brand-green/5 p-5 shadow-sm">
+      <div
+        className="pointer-events-none absolute -right-10 -top-12 h-32 w-32 rounded-full bg-brand-green/10 blur-2xl"
+        aria-hidden="true"
+      />
       <div className="flex items-start justify-between gap-3">
-        <div>
+        <div className="relative">
           <p className="font-display text-sm font-semibold text-card-foreground">
             {isReady ? "Ciclo concluído" : "Progresso da tarefa"}
           </p>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
             {isReady
-              ? "As três rodadas foram concluídas. Já pode resgatar o valor bloqueado."
-              : "Escolha um produto em cada rodada. O capital e o lucro ficam protegidos até terminar."}
+              ? "As três rodadas estão completas. O seu resgate está desbloqueado."
+              : `Complete as três rodadas para desbloquear o seu resgate · próxima: ${nextRound}/3.`}
           </p>
         </div>
-        <span className="shrink-0 rounded-full bg-secondary px-2.5 py-1 text-[11px] font-bold text-navy-900">
+        <span className="relative shrink-0 rounded-full bg-secondary px-2.5 py-1 text-[11px] font-bold text-navy-900">
           {completed}/3
         </span>
       </div>
 
-      <div className="mt-5 flex items-center">
+      <div className="relative mt-5 flex items-center">
         {[1, 2, 3].map((round) => (
           <div key={round} className="flex flex-1 items-center last:flex-none">
             <span
-              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold ${
+              className={`task-round-marker flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold transition-all duration-700 ${
                 round <= completed
-                  ? "border-brand-green bg-brand-green text-navy-900"
-                  : "border-border bg-secondary text-muted-foreground"
+                  ? "task-round-complete border-brand-green bg-brand-green text-navy-900"
+                  : round === nextRound && !isReady
+                    ? "task-round-active border-brand-green/70 bg-brand-green/10 text-brand-green-dark"
+                    : "border-border bg-secondary text-muted-foreground"
               }`}
             >
               {round <= completed ? <Check className="h-4 w-4" aria-hidden="true" /> : round}
             </span>
             {round < 3 && (
               <span
-                className={`mx-2 h-0.5 flex-1 ${
-                  round < completed ? "bg-brand-green" : "bg-border"
+                className={`mx-2 h-1 flex-1 overflow-hidden rounded-full bg-border transition-all duration-700 ${
+                  round < completed ? "bg-brand-green" : ""
                 }`}
               />
             )}
           </div>
         ))}
       </div>
-      <div className="mt-2 flex justify-between text-[10px] font-medium text-muted-foreground">
+      <div className="relative mt-2 flex justify-between text-[10px] font-medium text-muted-foreground">
         <span>Rodada 1</span>
         <span>Rodada 2</span>
         <span>Rodada 3</span>
+      </div>
+      <div className="relative mt-4 flex items-center justify-between rounded-2xl bg-secondary/70 px-3 py-2.5 text-[11px]">
+        <span className="font-medium text-muted-foreground">
+          {completed === 0 ? "Comece pela primeira compra" : `${completed} de 3 concluída(s)`}
+        </span>
+        <span className="font-bold text-brand-green-dark">+15% no resgate</span>
       </div>
     </section>
   );
@@ -336,7 +349,7 @@ function ProductTaskCard({
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-3">
         <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <CircleDollarSign className="h-3.5 w-3.5 text-brand-green-dark" aria-hidden="true" />+ Kz{" "}
-          {fmt(Number(product.price) * 0.09)} no resgate
+          {fmt(Number(product.price) * 0.15)} no resgate
         </p>
         {insufficient ? (
           <Link
@@ -386,7 +399,7 @@ function RedeemCard({
         <div>
           <p className="font-display text-sm font-bold">Resgate desbloqueado</p>
           <p className="mt-1 text-xs leading-relaxed text-white/60">
-            As três rodadas terminaram. O valor das compras mais 9% está pronto para voltar ao seu
+            As três rodadas terminaram. O valor das compras mais 15% está pronto para voltar ao seu
             saldo.
           </p>
         </div>

@@ -1,7 +1,7 @@
 -- =============================================================================
 -- GROUP MOBIL — Tarefas de venda
 -- Cada rodada compra uma tarefa de produto, debita a carteira e bloqueia
--- o valor da compra + 9% até três rodadas serem concluídas.
+-- o valor da compra + 15% até três rodadas serem concluídas.
 -- =============================================================================
 
 alter type public.wallet_transaction_type add value if not exists 'compra_tarefa';
@@ -159,7 +159,7 @@ begin
   end if;
 
   v_round := v_cycle.current_round + 1;
-  v_reward := round(v_product.price * 0.09, 2);
+  v_reward := round(v_product.price * 0.15, 2);
 
   insert into public.wallet_transactions (
     user_id, type, amount, status, note, confirmed_at
@@ -231,7 +231,7 @@ begin
     'resgate_tarefa',
     v_total,
     'confirmado',
-    'Resgate de tarefas · 3 rodadas + 9%',
+    'Resgate de tarefas · 3 rodadas + 15%',
     now()
   );
 

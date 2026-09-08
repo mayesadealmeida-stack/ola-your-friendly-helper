@@ -702,7 +702,7 @@ function TarefasTab({ finance }: { finance: Finance }) {
           hint="Compras registadas"
         />
         <StatCard label="Valor das tarefas" value={formatKz(totalPaidForTasks)} tone="green" />
-        <StatCard label="Lucro previsto" value={formatKz(totalReward)} hint="9% acumulado" />
+        <StatCard label="Lucro previsto" value={formatKz(totalReward)} hint="15% acumulado" />
         <StatCard
           label="Resgates pagos"
           value={formatKz(totalRedeemed)}
