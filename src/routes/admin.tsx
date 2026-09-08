@@ -56,11 +56,6 @@ export const Route = createFileRoute("/admin")({
       { name: "theme-color", content: "#071b4d" },
       { name: "apple-mobile-web-app-title", content: "GM Admin" },
     ],
-    links: [
-      { rel: "manifest", href: "/admin-manifest.json" },
-      { rel: "icon", href: "/admin-icon.svg", type: "image/svg+xml" },
-      { rel: "apple-touch-icon", href: "/admin-icon.svg" },
-    ],
   }),
   component: AdminPage,
 });

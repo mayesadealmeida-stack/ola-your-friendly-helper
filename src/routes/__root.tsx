@@ -78,7 +78,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
+  head: ({ matches }) => {
+    const isAdmin = matches.some((match) => match.routeId === "/admin");
+
+    return {
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
@@ -96,11 +99,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "theme-color", content: "#03153b" },
+      { name: "theme-color", content: isAdmin ? "#071b4d" : "#03153b" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
-      { name: "apple-mobile-web-app-title", content: "Group Mobil" },
+      { name: "apple-mobile-web-app-title", content: isAdmin ? "GM Admin" : "Group Mobil" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -112,11 +115,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
-      { rel: "manifest", href: "/manifest.json" },
-      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      {
+        rel: "icon",
+        href: isAdmin ? "/admin-icon.svg" : "/favicon.ico",
+        type: isAdmin ? "image/svg+xml" : "image/x-icon",
+      },
+      {
+        rel: "manifest",
+        href: isAdmin ? "/admin-manifest.json" : "/manifest.json",
+      },
+      {
+        rel: "apple-touch-icon",
+        href: isAdmin ? "/admin-icon.svg" : "/apple-touch-icon.png",
+      },
     ],
-  }),
+    };
+  },
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
