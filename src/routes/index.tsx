@@ -3,7 +3,14 @@ import { useState } from "react";
 import { Phone, Lock, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { setRememberMe as persistRememberMe } from "@/integrations/supabase/remember-me";
-import { normalizePhone, phoneToEmail, validatePhonePassword } from "@/lib/phone";
+import {
+  getLoginEmail,
+  normalizePhone,
+  phoneToEmail,
+  rememberLoginEmail,
+  validatePassword,
+  validatePhonePassword,
+} from "@/lib/phone";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -82,6 +89,7 @@ function Index() {
       setError(signInError.message);
       return;
     }
+    rememberLoginEmail(phoneToEmail(rawPhone));
     navigate({ to: "/home" });
   }
 
@@ -90,21 +98,21 @@ function Index() {
     setError(null);
 
     const form = new FormData(e.currentTarget);
-    const rawPhone = String(form.get("phone") ?? "").trim();
     const password = String(form.get("password") ?? "");
 
-    const invalid = validatePhonePassword(rawPhone, password);
+    const invalid = validatePassword(password);
     if (invalid) {
       setError(invalid);
       return;
     }
 
+    const email = getLoginEmail();
     setLoading(true);
     // Define ANTES de entrar: é neste momento que a sessão é gravada, e o
     // storage do Supabase lê esta preferência para decidir onde guardá-la.
     persistRememberMe(rememberMe);
     const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: phoneToEmail(rawPhone),
+      email,
       password,
     });
 
@@ -113,6 +121,7 @@ function Index() {
       setError("Telefone ou senha incorretos.");
       return;
     }
+    rememberLoginEmail(email);
     navigate({ to: "/home" });
   }
 
@@ -134,14 +143,6 @@ function Index() {
         {view === "login" ? (
           <form className="mt-10 space-y-5" onSubmit={handleLogin}>
             <IconField
-              label="Número de Telefone"
-              name="phone"
-              type="tel"
-              placeholder=""
-              icon={<Phone className="h-4.5 w-4.5" strokeWidth={2} aria-hidden="true" />}
-              required
-            />
-            <IconField
               label="Palavra-passe"
               name="password"
               type="password"
@@ -149,6 +150,9 @@ function Index() {
               icon={<Lock className="h-4.5 w-4.5" strokeWidth={2} aria-hidden="true" />}
               required
             />
+            <p className="text-xs text-muted-foreground">
+              Para entrar, basta colocar a sua palavra-passe.
+            </p>
 
             <div className="flex items-center justify-between pt-1 text-sm">
               <label htmlFor="remember" className="flex items-center gap-2 text-muted-foreground">
