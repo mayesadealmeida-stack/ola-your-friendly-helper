@@ -11,6 +11,9 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+// Import por efeito colateral: regista o listener de "beforeinstallprompt"
+// assim que o site carrega, em qualquer página — ver hooks/use-install-prompt.
+import "../hooks/use-install-prompt";
 
 function NotFoundComponent() {
   return (

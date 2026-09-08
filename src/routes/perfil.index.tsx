@@ -291,7 +291,8 @@ function kycBadge(status: string | undefined): MenuBadge {
 
 function InstallAppCard() {
   const { canInstall, installed, promptInstall } = useInstallPrompt();
-  const [showIosHelp, setShowIosHelp] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const isIos = typeof navigator !== "undefined" && /iphone|ipad|ipod/i.test(navigator.userAgent);
 
   if (installed) {
     return (
@@ -311,7 +312,7 @@ function InstallAppCard() {
       await promptInstall();
       return;
     }
-    setShowIosHelp((v) => !v);
+    setShowHelp((v) => !v);
   }
 
   return (
@@ -324,10 +325,22 @@ function InstallAppCard() {
         <Download className="h-4.5 w-4.5" aria-hidden="true" />
         Instalar aplicação
       </button>
-      {showIosHelp && (
+      {showHelp && (
         <div className="border-t border-white/10 px-5 py-4 text-xs leading-relaxed text-white/70">
-          No iPhone: toque em <strong className="text-white">Partilhar</strong> na barra do Safari e
-          depois em <strong className="text-white">"Adicionar ao ecrã principal"</strong>.
+          {isIos ? (
+            <>
+              No iPhone: toque em <strong className="text-white">Partilhar</strong> na barra do
+              Safari e depois em{" "}
+              <strong className="text-white">"Adicionar ao ecrã principal"</strong>.
+            </>
+          ) : (
+            <>
+              Ainda não foi possível instalar automaticamente. Abra o menu do navegador (⋮) e
+              escolha <strong className="text-white">"Instalar aplicativo"</strong> ou{" "}
+              <strong className="text-white">"Adicionar ao ecrã principal"</strong>. Se essa opção
+              não aparecer, atualize a página e tente de novo.
+            </>
+          )}
         </div>
       )}
     </section>
