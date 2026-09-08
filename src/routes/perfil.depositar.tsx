@@ -18,14 +18,9 @@ export const Route = createFileRoute("/perfil/depositar")({
 // comerciante feito junto da EMIS primeiro.
 // -----------------------------------------------------------------------------
 const MERCHANT_ENTITY_ID = "10116";
+const MERCHANT_REFERENCE = "956163317";
 
 const QUICK_AMOUNTS = [6000, 15000, 30000, 50000, 100000, 250000];
-
-function generateReference(): string {
-  const digits =
-    String(Date.now()).slice(-6) + String(Math.floor(Math.random() * 1000)).padStart(3, "0");
-  return digits.replace(/(\d{3})(?=\d)/g, "$1 ").trim();
-}
 
 type Phase = "valor" | "dados" | "comprovativo" | "enviado";
 
@@ -36,7 +31,6 @@ function DepositarPage() {
 
   const [phase, setPhase] = useState<Phase>("valor");
   const [amount, setAmount] = useState("");
-  const [reference, setReference] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -100,7 +94,6 @@ function DepositarPage() {
           {phase === "dados" && (
             <DadosReferenciaStep
               amountValue={amountValue}
-              reference={reference}
               onDone={() => setPhase("comprovativo")}
             />
           )}
@@ -126,7 +119,6 @@ function DepositarPage() {
           amountValue={amountValue}
           onCancel={() => setShowConfirm(false)}
           onConfirm={() => {
-            setReference(generateReference());
             setShowConfirm(false);
             setPhase("dados");
           }}
@@ -243,15 +235,7 @@ function ConfirmDialog({
   );
 }
 
-function DadosReferenciaStep({
-  amountValue,
-  reference,
-  onDone,
-}: {
-  amountValue: number;
-  reference: string;
-  onDone: () => void;
-}) {
+function DadosReferenciaStep({ amountValue, onDone }: { amountValue: number; onDone: () => void }) {
   return (
     <>
       <p className="mt-4 text-sm text-muted-foreground">
@@ -270,7 +254,7 @@ function DadosReferenciaStep({
         ) : (
           <ReferenceCard
             entityId={MERCHANT_ENTITY_ID}
-            reference={reference}
+            reference={MERCHANT_REFERENCE}
             amountValue={amountValue}
           />
         )}
