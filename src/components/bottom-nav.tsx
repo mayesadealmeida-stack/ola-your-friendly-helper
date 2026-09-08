@@ -1,11 +1,12 @@
 import { Link } from "@tanstack/react-router";
-import { Home as HomeIcon, Users, User, type LucideIcon } from "lucide-react";
+import { Home as HomeIcon, Users, LineChart, User, type LucideIcon } from "lucide-react";
 
-export type BottomNavKey = "home" | "grupos" | "perfil";
+export type BottomNavKey = "home" | "grupos" | "mercado" | "perfil";
 
 const ITEMS: { key: BottomNavKey; icon: LucideIcon; label: string; to: string }[] = [
   { key: "home", icon: HomeIcon, label: "Home", to: "/home" },
   { key: "grupos", icon: Users, label: "Grupos", to: "/grupos" },
+  { key: "mercado", icon: LineChart, label: "Mercado", to: "/mercado" },
   { key: "perfil", icon: User, label: "Perfil", to: "/perfil" },
 ];
 
