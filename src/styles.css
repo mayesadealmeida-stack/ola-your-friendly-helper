@@ -183,6 +183,24 @@
   }
 }
 
+@keyframes investment-ring-spin {
+  from {
+    transform: rotate(-90deg);
+  }
+  to {
+    transform: rotate(270deg);
+  }
+}
+
+@keyframes investment-ring-core-spin {
+  from {
+    transform: rotate(90deg);
+  }
+  to {
+    transform: rotate(-270deg);
+  }
+}
+
 .investment-energy-ring {
   display: flex;
   width: 244px;
@@ -191,8 +209,9 @@
   justify-content: center;
   border-radius: 9999px;
   padding: 10px;
-  animation: investment-ring-pulse 3.2s ease-in-out infinite;
-  transform: rotate(-90deg);
+  animation:
+    investment-ring-spin 8s linear infinite,
+    investment-ring-pulse 3.2s ease-in-out infinite;
 }
 
 .investment-energy-core {
@@ -203,11 +222,9 @@
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  background:
-    radial-gradient(circle at 50% 35%, rgb(247 147 26 / 13%), transparent 42%),
-    #10141c;
+  background: radial-gradient(circle at 50% 35%, rgb(247 147 26 / 13%), transparent 42%), #10141c;
   text-align: center;
-  transform: rotate(90deg);
+  animation: investment-ring-core-spin 8s linear infinite;
 }
 
 .investment-bitcoin {
