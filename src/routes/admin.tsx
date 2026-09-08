@@ -9,6 +9,7 @@ import {
   ExternalLink,
   FileText,
   ImagePlus,
+  LayoutDashboard,
   Loader2,
   Lock,
   PlusCircle,
@@ -17,9 +18,9 @@ import {
   TrendingUp,
   User as UserIcon,
   Users,
-  Wallet,
   X,
   XCircle,
+  type LucideIcon,
 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,23 +51,25 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-type TabKey =
-  | "resumo"
-  | "pagamentos"
-  | "saques"
-  | "contribuicoes"
-  | "usuarios"
-  | "faturas"
-  | "planos";
+type TabKey = "resumo" | "pagamentos" | "saques" | "usuarios" | "faturas" | "planos";
 
-const TABS: { key: TabKey; label: string }[] = [
-  { key: "resumo", label: "Resumo" },
-  { key: "pagamentos", label: "Pagamentos" },
-  { key: "saques", label: "Levantamentos" },
-  { key: "contribuicoes", label: "Contribuições" },
-  { key: "usuarios", label: "Usuários" },
-  { key: "faturas", label: "Faturas" },
-  { key: "planos", label: "Gestão de planos" },
+const ADMIN_ACTIONS: {
+  key: TabKey;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+}[] = [
+  { key: "resumo", label: "Resumo", description: "Visão geral", icon: LayoutDashboard },
+  {
+    key: "pagamentos",
+    label: "Pagamentos",
+    description: "Confirmar entradas",
+    icon: ArrowDownLeft,
+  },
+  { key: "saques", label: "Levantamentos", description: "Pedidos de saída", icon: ArrowUpRight },
+  { key: "usuarios", label: "Usuários", description: "Contas e saldos", icon: Users },
+  { key: "faturas", label: "Faturas", description: "Comprovativos", icon: FileText },
+  { key: "planos", label: "Planos", description: "Gerir investimentos", icon: TrendingUp },
 ];
 
 function methodLabel(method: string | null): string {
@@ -139,26 +142,59 @@ function AdminPage() {
           </div>
           <h1 className="mt-4 font-display text-xl font-semibold text-white">Administração</h1>
           <p className="mt-1 text-sm text-white/55">
-            Dinheiro que entra, levantamentos e quem já pagou.
+            Organize pagamentos, utilizadores, faturas e planos num só lugar.
           </p>
         </header>
 
         <main className="-mt-10 space-y-4 px-5">
-          <nav className="flex gap-1 overflow-x-auto rounded-2xl bg-card p-1 shadow-xl shadow-navy-900/10">
-            {TABS.map((t) => (
-              <button
-                key={t.key}
-                type="button"
-                onClick={() => setTab(t.key)}
-                className={`shrink-0 rounded-xl px-3 py-2 text-[11px] font-semibold transition ${
-                  tab === t.key
-                    ? "bg-navy-900 text-white"
-                    : "text-muted-foreground hover:bg-secondary"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
+          <nav className="rounded-3xl bg-card p-4 shadow-xl shadow-navy-900/10">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <p className="font-display text-sm font-semibold text-card-foreground">
+                  Ações rápidas
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">Escolha uma área para gerir.</p>
+              </div>
+              <span className="rounded-full bg-secondary px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Admin
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {ADMIN_ACTIONS.map((action) => {
+                const Icon = action.icon;
+                const active = tab === action.key;
+                return (
+                  <button
+                    key={action.key}
+                    type="button"
+                    onClick={() => setTab(action.key)}
+                    className={`flex items-center gap-3 rounded-2xl border px-3 py-3 text-left transition ${
+                      active
+                        ? "border-navy-900 bg-navy-900 text-white shadow-md shadow-navy-900/20"
+                        : "border-border bg-background text-card-foreground hover:border-navy-900/30 hover:bg-secondary"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                        active ? "bg-white/15 text-white" : "bg-secondary text-navy-900"
+                      }`}
+                    >
+                      <Icon className="h-4.5 w-4.5" aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-xs font-bold">{action.label}</span>
+                      <span
+                        className={`mt-0.5 block truncate text-[10px] ${
+                          active ? "text-white/65" : "text-muted-foreground"
+                        }`}
+                      >
+                        {action.description}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </nav>
 
           {finance.loading ? (
@@ -170,7 +206,6 @@ function AdminPage() {
               {tab === "resumo" && <ResumoTab finance={finance} />}
               {tab === "pagamentos" && <MovimentosTab finance={finance} kind="deposito" />}
               {tab === "saques" && <MovimentosTab finance={finance} kind="levantamento" />}
-              {tab === "contribuicoes" && <ContribuicoesTab finance={finance} />}
               {tab === "usuarios" && <UsuariosTab finance={finance} />}
               {tab === "faturas" && <FaturasTab finance={finance} />}
               {tab === "planos" && <PlanosTab />}
@@ -238,12 +273,6 @@ function ResumoTab({ finance }: { finance: Finance }) {
           value={formatKz(s.saques_pendentes)}
           hint={`${s.n_saques_pendentes} pedido(s)`}
           tone="amber"
-        />
-        <StatCard label="Contribuições pagas" value={formatKz(s.total_contribuicoes_pagas)} />
-        <StatCard
-          label="Contribuições por pagar"
-          value={String(s.n_contribuicoes_pendentes)}
-          hint="pessoas ainda em falta"
         />
       </div>
 
@@ -446,92 +475,6 @@ function TxRow({
   );
 }
 
-function ContribuicoesTab({ finance }: { finance: Finance }) {
-  const paid = finance.contributions.filter((c) => c.status === "confirmada");
-  const unpaid = finance.contributions.filter((c) => c.status !== "confirmada");
-
-  return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3">
-        <StatCard label="Já pagaram" value={String(paid.length)} tone="green" />
-        <StatCard label="Ainda não pagaram" value={String(unpaid.length)} tone="amber" />
-      </div>
-
-      <Section title={`Em falta (${unpaid.length})`}>
-        {unpaid.length === 0 ? (
-          <Empty text="Toda a gente está em dia." />
-        ) : (
-          unpaid.map((c) => (
-            <ContribRow
-              key={c.id}
-              name={c.participant_name}
-              group={c.group_name}
-              round={c.round_number}
-              amount={Number(c.amount)}
-              date={c.due_date}
-              status={c.status}
-            />
-          ))
-        )}
-      </Section>
-
-      <Section title={`Pagas (${paid.length})`}>
-        {paid.length === 0 ? (
-          <Empty text="Ainda sem contribuições pagas." />
-        ) : (
-          paid.map((c) => (
-            <ContribRow
-              key={c.id}
-              name={c.participant_name}
-              group={c.group_name}
-              round={c.round_number}
-              amount={Number(c.amount)}
-              date={c.paid_at ?? c.due_date}
-              status={c.status}
-            />
-          ))
-        )}
-      </Section>
-    </div>
-  );
-}
-
-function ContribRow({
-  name,
-  group,
-  round,
-  amount,
-  date,
-  status,
-}: {
-  name: string;
-  group: string;
-  round: number;
-  amount: number;
-  date: string;
-  status: string;
-}) {
-  const ok = status === "confirmada";
-  return (
-    <article className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-sm">
-      <span
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-          ok ? "bg-brand-green/15 text-brand-green-dark" : "bg-amber-500/15 text-amber-600"
-        }`}
-      >
-        <Wallet className="h-4.5 w-4.5" aria-hidden="true" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-card-foreground">{name}</p>
-        <p className="truncate text-xs text-muted-foreground">
-          {group} · rodada {round} · {formatDate(date)}
-        </p>
-      </div>
-      <p className="font-display text-sm font-bold text-card-foreground">{formatKz(amount)}</p>
-    </article>
-  );
-}
-
 function computeUserBalances(transactions: WalletTx[]): Record<string, number> {
   const balances: Record<string, number> = {};
   for (const t of transactions) {
@@ -722,7 +665,9 @@ function PlanosTab() {
         <Empty text="Ainda não há planos criados. Use “Novo plano” para publicar o primeiro." />
       ) : (
         <Section title={`Planos publicados (${plans.length})`}>
-          {plans.map((plan) => <AdminPlanRow key={plan.id} plan={plan} />)}
+          {plans.map((plan) => (
+            <AdminPlanRow key={plan.id} plan={plan} />
+          ))}
         </Section>
       )}
     </div>
@@ -808,7 +753,9 @@ function PlanForm({
       </div>
 
       <label className="block">
-        <span className="mb-1.5 block text-xs font-medium text-muted-foreground">Nome do plano</span>
+        <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
+          Nome do plano
+        </span>
         <input
           value={name}
           onChange={(event) => setName(event.target.value)}
@@ -892,7 +839,11 @@ function PlanForm({
 
       <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-border bg-secondary/50 p-3 transition hover:border-brand-green">
         {preview ? (
-          <img src={preview} alt="Pré-visualização do plano" className="h-14 w-14 rounded-lg object-cover" />
+          <img
+            src={preview}
+            alt="Pré-visualização do plano"
+            className="h-14 w-14 rounded-lg object-cover"
+          />
         ) : (
           <span className="flex h-14 w-14 items-center justify-center rounded-lg bg-card text-muted-foreground">
             <ImagePlus className="h-5 w-5" aria-hidden="true" />
