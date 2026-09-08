@@ -856,7 +856,7 @@ function EliminarDadosFinanceirosCard({ onDone }: { onDone: () => void }) {
       setMessage({ type: "error", text: error.message });
       return;
     }
-    setMessage({ type: "ok", text: "Todos os dados financeiros foram eliminados." });
+    setMessage({ type: "ok", text: "Todos os dados da aplicação foram eliminados." });
     setConfirmText("");
     setOpen(false);
     onDone();
@@ -871,10 +871,10 @@ function EliminarDadosFinanceirosCard({ onDone }: { onDone: () => void }) {
         <div className="min-w-0 flex-1">
           <h2 className="font-display text-sm font-semibold text-destructive">Zona de perigo</h2>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            Eliminar dados apaga permanentemente todos os movimentos financeiros da carteira:
-            depósitos, levantamentos, contribuições e recebimentos de todos os utilizadores. Os
-            saldos calculados a partir destes movimentos ficarão a zero. Esta ação não pode ser
-            desfeita.
+            Eliminar dados apaga permanentemente TODOS os dados da aplicação: saldos, depósitos,
+            levantamentos, contribuições, perfis, verificação KYC, grupos, métodos de pagamento,
+            notificações e publicações — de todos os utilizadores. As contas de acesso (login) não
+            são apagadas, mas ficam sem nenhum dado associado. Esta ação não pode ser desfeita.
           </p>
         </div>
       </div>
