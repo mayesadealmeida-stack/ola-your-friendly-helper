@@ -98,15 +98,19 @@ function TopBar({ unreadCount }: { unreadCount: number }) {
     <header className="flex items-center gap-3 bg-navy-900 px-5 py-3.5">
       <img src={logoMark} alt="" aria-hidden="true" className="h-8 w-8 shrink-0" />
       <p className="flex-1 truncate font-display text-base font-semibold text-white">Group Mobil</p>
-      <button
+      <Link
+        to="/notificacoes"
         aria-label="Notificações"
         className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/90 transition hover:bg-white/10"
       >
         <Bell className="h-5 w-5" strokeWidth={1.9} aria-hidden="true" />
         {unreadCount > 0 && (
-          <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-brand-green ring-2 ring-navy-900" />
+          <span
+            className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-navy-900"
+            aria-label={`${unreadCount} notificações não lidas`}
+          />
         )}
-      </button>
+      </Link>
       <UserAvatarLink size={32} />
     </header>
   );
