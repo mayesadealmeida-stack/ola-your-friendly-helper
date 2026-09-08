@@ -15,6 +15,8 @@ import {
   PlusCircle,
   RefreshCw,
   ShieldCheck,
+  KeyRound,
+  ClipboardCheck,
   TrendingUp,
   User as UserIcon,
   Users,
@@ -51,7 +53,8 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-type TabKey = "resumo" | "pagamentos" | "saques" | "usuarios" | "faturas" | "planos";
+type TabKey =
+  "resumo" | "pagamentos" | "saques" | "usuarios" | "faturas" | "planos" | "tarefas" | "seguranca";
 
 const ADMIN_ACTIONS: {
   key: TabKey;
@@ -70,6 +73,8 @@ const ADMIN_ACTIONS: {
   { key: "usuarios", label: "Usuários", description: "Contas e saldos", icon: Users },
   { key: "faturas", label: "Faturas", description: "Comprovativos", icon: FileText },
   { key: "planos", label: "Planos", description: "Gerir investimentos", icon: TrendingUp },
+  { key: "tarefas", label: "Tarefas", description: "Rodadas e pagamentos", icon: ClipboardCheck },
+  { key: "seguranca", label: "Segurança", description: "Trocar palavra-passe", icon: KeyRound },
 ];
 
 function methodLabel(method: string | null): string {
@@ -209,6 +214,8 @@ function AdminPage() {
               {tab === "usuarios" && <UsuariosTab finance={finance} />}
               {tab === "faturas" && <FaturasTab finance={finance} />}
               {tab === "planos" && <PlanosTab />}
+              {tab === "tarefas" && <TarefasTab finance={finance} />}
+              {tab === "seguranca" && <SegurancaTab />}
             </>
           )}
         </main>
@@ -615,6 +622,257 @@ function GrantBalanceForm({
           Confirmar
         </button>
       </div>
+    </div>
+  );
+}
+
+function TarefasTab({ finance }: { finance: Finance }) {
+  const orders = finance.taskOrders;
+  const totalPaidForTasks = orders.reduce((sum, order) => sum + Number(order.price), 0);
+  const totalReward = orders.reduce((sum, order) => sum + Number(order.reward), 0);
+  const redeemedCycles = finance.taskCycles.filter((cycle) => cycle.status === "redeemed");
+  const totalRedeemed = redeemedCycles.reduce(
+    (sum, cycle) => sum + Number(cycle.locked_amount) + Number(cycle.reward_amount),
+    0,
+  );
+  const rounds = [1, 2, 3].map((round) => {
+    const roundOrders = orders.filter((order) => order.round_number === round);
+    return {
+      round,
+      count: roundOrders.length,
+      amount: roundOrders.reduce((sum, order) => sum + Number(order.price), 0),
+      reward: roundOrders.reduce((sum, order) => sum + Number(order.reward), 0),
+    };
+  });
+
+  return (
+    <div className="space-y-4">
+      <section className="rounded-2xl bg-card p-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-navy-900/10 text-navy-900">
+            <ClipboardCheck className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div>
+            <h2 className="font-display text-sm font-semibold text-card-foreground">
+              Gestão de tarefas
+            </h2>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Veja quantas rodadas foram executadas e quanto foi pago em cada rodada.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-2 gap-3">
+        <StatCard
+          label="Rodadas executadas"
+          value={String(orders.length)}
+          hint="Compras registadas"
+        />
+        <StatCard label="Valor das tarefas" value={formatKz(totalPaidForTasks)} tone="green" />
+        <StatCard label="Lucro previsto" value={formatKz(totalReward)} hint="9% acumulado" />
+        <StatCard
+          label="Resgates pagos"
+          value={formatKz(totalRedeemed)}
+          hint={`${redeemedCycles.length} ciclo(s) concluído(s)`}
+          tone="green"
+        />
+      </div>
+
+      <Section title="Pagamentos por rodada">
+        {rounds.map((item) => (
+          <div
+            key={item.round}
+            className="flex items-center justify-between gap-3 rounded-2xl bg-card p-4 shadow-sm"
+          >
+            <div>
+              <p className="text-sm font-semibold text-card-foreground">Rodada {item.round} de 3</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {item.count} tarefa(s) executada(s)
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-bold text-card-foreground">{formatKz(item.amount)}</p>
+              <p className="mt-0.5 text-[11px] text-brand-green-dark">
+                +{formatKz(item.reward)} de lucro
+              </p>
+            </div>
+          </div>
+        ))}
+      </Section>
+
+      <Section title={`Histórico das tarefas (${orders.length})`}>
+        {orders.length === 0 ? (
+          <Empty text="Ainda não há tarefas executadas." />
+        ) : (
+          orders.map((order) => {
+            const product = finance.taskProducts[order.product_id];
+            const profile = finance.profiles[order.user_id];
+            return (
+              <article key={order.id} className="rounded-2xl bg-card p-4 shadow-sm">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-card-foreground">
+                      {product?.name ?? "Tarefa"}
+                    </p>
+                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                      {profile?.full_name || profile?.username || "Utilizador"}
+                    </p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-secondary px-2 py-1 text-[10px] font-semibold text-navy-900">
+                    Rodada {order.round_number}/3
+                  </span>
+                </div>
+                <div className="mt-3 flex items-end justify-between gap-3">
+                  <p className="text-[11px] text-muted-foreground">
+                    {formatDate(order.created_at)}
+                  </p>
+                  <div className="text-right">
+                    <p className="text-sm font-bold text-card-foreground">
+                      {formatKz(Number(order.price))}
+                    </p>
+                    <p className="text-[11px] text-brand-green-dark">
+                      Lucro: +{formatKz(Number(order.reward))}
+                    </p>
+                  </div>
+                </div>
+              </article>
+            );
+          })
+        )}
+      </Section>
+    </div>
+  );
+}
+
+function SegurancaTab() {
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage(null);
+
+    const invalid = validatePassword(newPassword);
+    if (invalid) {
+      setMessage({ type: "error", text: invalid });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setMessage({ type: "error", text: "As novas palavras-passe não coincidem." });
+      return;
+    }
+    if (currentPassword === newPassword) {
+      setMessage({ type: "error", text: "A nova palavra-passe deve ser diferente da atual." });
+      return;
+    }
+
+    setBusy(true);
+    const { error: loginError } = await supabase.auth.signInWithPassword({
+      email: getAdminLoginEmail(),
+      password: currentPassword,
+    });
+
+    if (loginError) {
+      setBusy(false);
+      setMessage({ type: "error", text: "A palavra-passe atual está incorreta." });
+      return;
+    }
+
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+    setBusy(false);
+    if (updateError) {
+      setMessage({ type: "error", text: "Não foi possível trocar a palavra-passe." });
+      return;
+    }
+
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setMessage({ type: "ok", text: "Palavra-passe alterada com sucesso." });
+  }
+
+  return (
+    <div className="space-y-4">
+      <section className="rounded-2xl bg-card p-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-navy-900/10 text-navy-900">
+            <KeyRound className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div>
+            <h2 className="font-display text-sm font-semibold text-card-foreground">
+              Segurança do administrador
+            </h2>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Troque a palavra-passe usada para entrar neste painel.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl bg-card p-4 shadow-sm">
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
+            Palavra-passe atual
+          </span>
+          <input
+            type="password"
+            value={currentPassword}
+            onChange={(event) => setCurrentPassword(event.target.value)}
+            autoComplete="current-password"
+            className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm outline-none focus:border-navy-900"
+            required
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
+            Nova palavra-passe
+          </span>
+          <input
+            type="password"
+            value={newPassword}
+            onChange={(event) => setNewPassword(event.target.value)}
+            autoComplete="new-password"
+            className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm outline-none focus:border-navy-900"
+            required
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
+            Confirmar nova palavra-passe
+          </span>
+          <input
+            type="password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            autoComplete="new-password"
+            className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm outline-none focus:border-navy-900"
+            required
+          />
+        </label>
+
+        {message && (
+          <p
+            className={`text-xs font-medium ${
+              message.type === "ok" ? "text-brand-green-dark" : "text-destructive"
+            }`}
+          >
+            {message.text}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={busy}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-navy-900 py-3 text-sm font-semibold text-white transition hover:bg-navy-800 disabled:opacity-60"
+        >
+          {busy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+          Alterar palavra-passe
+        </button>
+      </form>
     </div>
   );
 }

@@ -6,6 +6,9 @@ import type { Tables } from "@/integrations/supabase/types";
 export type WalletTx = Tables<"wallet_transactions">;
 export type Profile = Tables<"profiles">;
 export type ContributionRow = Tables<"contributions">;
+export type TaskOrder = Tables<"task_orders">;
+export type TaskCycle = Tables<"task_cycles">;
+export type TaskProduct = Tables<"task_products">;
 
 export type AdminSummary = {
   total_entradas: number;
@@ -65,22 +68,37 @@ type AdminData = {
   transactions: WalletTx[];
   profiles: Record<string, Profile>;
   contributions: (ContributionRow & { participant_name: string; group_name: string })[];
+  taskOrders: TaskOrder[];
+  taskCycles: TaskCycle[];
+  taskProducts: Record<string, TaskProduct>;
 };
 
 async function fetchAdminData(): Promise<AdminData> {
-  const [summaryRes, txRes, profilesRes, contribRes, participantsRes, groupsRes] =
-    await Promise.all([
-      supabase.rpc("admin_finance_summary"),
-      supabase
-        .from("wallet_transactions")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(300),
-      supabase.from("profiles").select("*"),
-      supabase.from("contributions").select("*").order("due_date", { ascending: false }).limit(300),
-      supabase.from("group_participants").select("id, user_id, display_name"),
-      supabase.from("groups").select("id, name"),
-    ]);
+  const [
+    summaryRes,
+    txRes,
+    profilesRes,
+    contribRes,
+    participantsRes,
+    groupsRes,
+    taskOrdersRes,
+    taskCyclesRes,
+    taskProductsRes,
+  ] = await Promise.all([
+    supabase.rpc("admin_finance_summary"),
+    supabase
+      .from("wallet_transactions")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(300),
+    supabase.from("profiles").select("*"),
+    supabase.from("contributions").select("*").order("due_date", { ascending: false }).limit(300),
+    supabase.from("group_participants").select("id, user_id, display_name"),
+    supabase.from("groups").select("id, name"),
+    supabase.from("task_orders").select("*").order("created_at", { ascending: false }).limit(500),
+    supabase.from("task_cycles").select("*").order("created_at", { ascending: false }).limit(300),
+    supabase.from("task_products").select("*"),
+  ]);
 
   const rawSummary = Array.isArray(summaryRes.data) ? summaryRes.data[0] : summaryRes.data;
   const summary: AdminSummary = rawSummary
@@ -112,7 +130,20 @@ async function fetchAdminData(): Promise<AdminData> {
     group_name: groupName.get(c.group_id) ?? "Grupo",
   }));
 
-  return { summary, transactions: (txRes.data ?? []) as WalletTx[], profiles, contributions };
+  const taskProducts: Record<string, TaskProduct> = {};
+  for (const product of taskProductsRes.data ?? []) {
+    taskProducts[product.id] = product as TaskProduct;
+  }
+
+  return {
+    summary,
+    transactions: (txRes.data ?? []) as WalletTx[],
+    profiles,
+    contributions,
+    taskOrders: (taskOrdersRes.data ?? []) as TaskOrder[],
+    taskCycles: (taskCyclesRes.data ?? []) as TaskCycle[],
+    taskProducts,
+  };
 }
 
 export function useAdminFinance(enabled: boolean) {
@@ -172,6 +203,9 @@ export function useAdminFinance(enabled: boolean) {
     transactions: query.data?.transactions ?? [],
     profiles: query.data?.profiles ?? {},
     contributions: query.data?.contributions ?? [],
+    taskOrders: query.data?.taskOrders ?? [],
+    taskCycles: query.data?.taskCycles ?? [],
+    taskProducts: query.data?.taskProducts ?? {},
     loading: query.isPending,
     refresh,
     review,

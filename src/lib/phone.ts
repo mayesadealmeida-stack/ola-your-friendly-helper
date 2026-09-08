@@ -39,7 +39,12 @@ export function getAdminLoginEmail(): string {
 }
 
 export function validatePassword(password: string): string | null {
-  return password === APP_ACCESS_PASSWORD ? null : "Senha incorreta.";
+  if (!password) return "Digite a palavra-passe.";
+  if (password.length < 6) return "A palavra-passe deve ter pelo menos 6 caracteres.";
+  if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+    return "A palavra-passe deve conter letras e números.";
+  }
+  return null;
 }
 
 export function validateSignupIdentity(fullName: string, username: string): string | null {

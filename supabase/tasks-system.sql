@@ -84,11 +84,23 @@ on public.task_cycles for select
 to authenticated
 using (user_id = auth.uid());
 
+drop policy if exists "Admins veem todos os ciclos de tarefas" on public.task_cycles;
+create policy "Admins veem todos os ciclos de tarefas"
+on public.task_cycles for select
+to authenticated
+using (public.has_role(auth.uid(), 'admin'));
+
 drop policy if exists "Utilizador vê as suas compras de tarefas" on public.task_orders;
 create policy "Utilizador vê as suas compras de tarefas"
 on public.task_orders for select
 to authenticated
 using (user_id = auth.uid());
+
+drop policy if exists "Admins veem todas as compras de tarefas" on public.task_orders;
+create policy "Admins veem todas as compras de tarefas"
+on public.task_orders for select
+to authenticated
+using (public.has_role(auth.uid(), 'admin'));
 
 create or replace function public.start_task_round(p_product_id uuid)
 returns public.task_cycles
