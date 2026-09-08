@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
+  AlertTriangle,
   ArrowDownLeft,
   ArrowUpRight,
+  Ban,
   CircleDollarSign,
   CheckCircle2,
   ChevronLeft,
@@ -24,6 +26,7 @@ import {
   TrendingUp,
   User as UserIcon,
   Users,
+  Wallet,
   X,
   XCircle,
   type LucideIcon,
@@ -31,9 +34,10 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { adminIdentifierToEmail, getAdminLoginEmail, validatePassword } from "@/lib/phone";
-import { useAdminFinance, useIsAdmin, type WalletTx } from "@/hooks/use-admin";
+import { useAdminFinance, useIsAdmin, type Profile, type WalletTx } from "@/hooks/use-admin";
 import { useAdminPosts, type AdminPost, type NewAdminPost } from "@/hooks/use-admin-posts";
 import { usePlans, type InvestmentPlan } from "@/hooks/use-plans";
+import { useAdminInvestments, type AdminInvestment } from "@/hooks/use-admin-investments";
 import { PAYMENT_METHOD_INFO, type PaymentMethodKey } from "@/hooks/use-payment-methods";
 import { formatKz, formatDate } from "@/lib/groups";
 
@@ -69,6 +73,7 @@ type TabKey =
   | "faturamento-taxas"
   | "taxa-saque"
   | "planos"
+  | "investimentos"
   | "noticias"
   | "tarefas"
   | "seguranca";
@@ -105,6 +110,12 @@ const ADMIN_ACTIONS: {
   },
   { key: "taxa-saque", label: "Taxa de saque", description: "Definir percentagem", icon: Percent },
   { key: "planos", label: "Planos", description: "Gerir investimentos", icon: TrendingUp },
+  {
+    key: "investimentos",
+    label: "Investimentos",
+    description: "Investimentos dos utilizadores",
+    icon: Wallet,
+  },
   { key: "noticias", label: "Notícias", description: "Publicar novidades", icon: Newspaper },
   { key: "tarefas", label: "Tarefas", description: "Rodadas e pagamentos", icon: ClipboardCheck },
   { key: "seguranca", label: "Segurança", description: "Trocar palavra-passe", icon: KeyRound },
@@ -121,6 +132,7 @@ function AdminPage() {
   const { isAdmin, loading: roleLoading, userId } = useIsAdmin();
   const finance = useAdminFinance(isAdmin);
   const posts = useAdminPosts(isAdmin);
+  const investmentsAdmin = useAdminInvestments(isAdmin);
   const [tab, setTab] = useState<TabKey>("resumo");
   // Exige sempre o login próprio do admin nesta página — mesmo que o
   // navegador já tenha uma sessão normal de utilizador aberta, essa sessão
@@ -286,9 +298,12 @@ function AdminPage() {
               {tab === "faturamento-taxas" && <TaxasFaturamentoTab finance={finance} />}
               {tab === "taxa-saque" && <TaxaSaqueTab finance={finance} />}
               {tab === "planos" && <PlanosTab />}
+              {tab === "investimentos" && (
+                <InvestimentosTab investmentsAdmin={investmentsAdmin} profiles={finance.profiles} />
+              )}
               {tab === "noticias" && <NoticiasTab posts={posts} />}
               {tab === "tarefas" && <TarefasTab finance={finance} />}
-              {tab === "seguranca" && <SegurancaTab />}
+              {tab === "seguranca" && <SegurancaTab finance={finance} />}
             </>
           )}
         </main>
@@ -823,7 +838,7 @@ function TarefasTab({ finance }: { finance: Finance }) {
   );
 }
 
-function SegurancaTab() {
+function SegurancaTab({ finance }: { finance: Finance }) {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -960,12 +975,114 @@ function SegurancaTab() {
           Alterar palavra-passe
         </button>
       </form>
+
+      <EliminarDadosFinanceirosCard onDone={() => finance.refresh()} />
     </div>
   );
 }
 
+function EliminarDadosFinanceirosCard({ onDone }: { onDone: () => void }) {
+  const CONFIRM_WORD = "ELIMINAR";
+  const [open, setOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
+
+  async function handleWipe() {
+    setBusy(true);
+    setMessage(null);
+    const { error } = await supabase.rpc("admin_wipe_financial_data" as never, {} as never);
+    setBusy(false);
+    if (error) {
+      setMessage({ type: "error", text: error.message });
+      return;
+    }
+    setMessage({ type: "ok", text: "Todos os dados financeiros foram eliminados." });
+    setConfirmText("");
+    setOpen(false);
+    onDone();
+  }
+
+  return (
+    <section className="space-y-3 rounded-2xl border border-destructive/20 bg-destructive/5 p-4">
+      <div className="flex items-start gap-3">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/15 text-destructive">
+          <AlertTriangle className="h-5 w-5" aria-hidden="true" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="font-display text-sm font-semibold text-destructive">Zona de perigo</h2>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            Eliminar dados apaga permanentemente todos os movimentos financeiros da carteira:
+            depósitos, levantamentos, contribuições e recebimentos de todos os utilizadores. Os
+            saldos calculados a partir destes movimentos ficarão a zero. Esta ação não pode ser
+            desfeita.
+          </p>
+        </div>
+      </div>
+
+      {!open ? (
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(true);
+            setMessage(null);
+          }}
+          className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-destructive/30 bg-card py-2.5 text-xs font-semibold text-destructive transition hover:bg-destructive/10"
+        >
+          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+          Eliminar dados
+        </button>
+      ) : (
+        <div className="space-y-2 rounded-xl bg-card p-3">
+          <p className="text-xs text-muted-foreground">
+            Para confirmar, escreva{" "}
+            <span className="font-semibold text-destructive">{CONFIRM_WORD}</span> no campo abaixo.
+          </p>
+          <input
+            value={confirmText}
+            onChange={(event) => setConfirmText(event.target.value)}
+            placeholder={CONFIRM_WORD}
+            className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm outline-none focus:border-destructive"
+          />
+          <div className="flex gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setConfirmText("");
+              }}
+              className="flex-1 rounded-xl bg-secondary py-2.5 text-xs font-semibold text-muted-foreground"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleWipe}
+              disabled={busy || confirmText.trim() !== CONFIRM_WORD}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-destructive py-2.5 text-xs font-semibold text-destructive-foreground disabled:opacity-50"
+            >
+              {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
+              {busy ? "A eliminar…" : "Eliminar tudo"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {message && (
+        <p
+          className={`text-xs font-medium ${
+            message.type === "ok" ? "text-brand-green-dark" : "text-destructive"
+          }`}
+        >
+          {message.text}
+        </p>
+      )}
+    </section>
+  );
+}
+
 function PlanosTab() {
-  const { plans, loading, error: loadError, createPlan } = usePlans(true);
+  const { plans, loading, error: loadError, createPlan, deletePlan } = usePlans(true);
   const [showForm, setShowForm] = useState(false);
 
   return (
@@ -1011,7 +1128,7 @@ function PlanosTab() {
       ) : (
         <Section title={`Planos publicados (${plans.length})`}>
           {plans.map((plan) => (
-            <AdminPlanRow key={plan.id} plan={plan} />
+            <AdminPlanRow key={plan.id} plan={plan} onDelete={deletePlan} />
           ))}
         </Section>
       )}
@@ -1233,31 +1350,246 @@ function PlanForm({
   );
 }
 
-function AdminPlanRow({ plan }: { plan: InvestmentPlan }) {
+function AdminPlanRow({
+  plan,
+  onDelete,
+}: {
+  plan: InvestmentPlan;
+  onDelete: (plan: InvestmentPlan) => Promise<{ error: string | null }>;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleDelete() {
+    if (!window.confirm(`Eliminar o plano “${plan.name}”? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+    const result = await onDelete(plan);
+    setBusy(false);
+    if (result.error) setError(result.error);
+  }
+
   return (
-    <article className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-sm">
-      {plan.image_url ? (
-        <img src={plan.image_url} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover" />
-      ) : (
-        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-secondary text-navy-900">
-          <TrendingUp className="h-5 w-5" aria-hidden="true" />
+    <article className="rounded-2xl bg-card p-3 shadow-sm">
+      <div className="flex items-center gap-3">
+        {plan.image_url ? (
+          <img src={plan.image_url} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover" />
+        ) : (
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-secondary text-navy-900">
+            <TrendingUp className="h-5 w-5" aria-hidden="true" />
+          </span>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-semibold text-card-foreground">{plan.name}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Entrada: {formatKz(Number(plan.entry_price))}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Duração: {plan.duration_value} {plan.duration_unit}
+          </p>
+          <p className="text-xs font-semibold text-brand-green-dark">
+            Retorno: {formatKz(Number(plan.estimated_return))}
+          </p>
+        </div>
+        <span className="shrink-0 rounded-full bg-brand-green/15 px-2 py-1 text-[10px] font-semibold text-brand-green-dark">
+          No Mercado
         </span>
-      )}
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-card-foreground">{plan.name}</p>
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          Entrada: {formatKz(Number(plan.entry_price))}
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Duração: {plan.duration_value} {plan.duration_unit}
-        </p>
-        <p className="text-xs font-semibold text-brand-green-dark">
-          Retorno: {formatKz(Number(plan.estimated_return))}
-        </p>
       </div>
-      <span className="rounded-full bg-brand-green/15 px-2 py-1 text-[10px] font-semibold text-brand-green-dark">
-        No Mercado
-      </span>
+
+      <button
+        type="button"
+        onClick={handleDelete}
+        disabled={busy}
+        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/5 py-2.5 text-xs font-semibold text-destructive transition hover:bg-destructive/10 disabled:opacity-60"
+      >
+        {busy ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+        ) : (
+          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+        )}
+        {busy ? "A eliminar…" : "Eliminar plano"}
+      </button>
+      {error && <p className="mt-2 text-[11px] font-medium text-destructive">{error}</p>}
+    </article>
+  );
+}
+
+function investmentStatusLabel(status: string): { label: string; className: string } {
+  if (status === "active") {
+    return { label: "Ativo", className: "bg-brand-green/15 text-brand-green-dark" };
+  }
+  if (status === "redeemed") {
+    return { label: "Resgatado", className: "bg-navy-900/10 text-navy-900" };
+  }
+  if (status === "cancelled") {
+    return { label: "Cancelado", className: "bg-destructive/10 text-destructive" };
+  }
+  return { label: status, className: "bg-secondary text-muted-foreground" };
+}
+
+function InvestimentosTab({
+  investmentsAdmin,
+  profiles,
+}: {
+  investmentsAdmin: ReturnType<typeof useAdminInvestments>;
+  profiles: Record<string, Profile>;
+}) {
+  const { investments, loading, error: loadError, cancelInvestment } = investmentsAdmin;
+
+  const totals = useMemo(() => {
+    let ativos = 0;
+    let valorAtivo = 0;
+    for (const inv of investments) {
+      if (inv.status === "active") {
+        ativos += 1;
+        valorAtivo += Number(inv.entry_amount);
+      }
+    }
+    return { ativos, valorAtivo };
+  }, [investments]);
+
+  return (
+    <div className="space-y-4">
+      <section className="rounded-2xl bg-card p-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-green/15 text-brand-green-dark">
+            <Wallet className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-display text-sm font-semibold text-card-foreground">
+              Investimentos dos utilizadores
+            </h2>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Veja todos os investimentos feitos na aplicação e cancele-os se necessário. Ao
+              cancelar, o valor de entrada é devolvido à carteira do utilizador.
+            </p>
+          </div>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <StatCard label="Investimentos ativos" value={String(totals.ativos)} />
+          <StatCard
+            label="Valor investido (ativo)"
+            value={formatKz(totals.valorAtivo)}
+            tone="green"
+          />
+        </div>
+      </section>
+
+      {loadError && (
+        <p className="rounded-2xl bg-destructive/10 p-4 text-xs font-medium text-destructive">
+          Não foi possível carregar os investimentos: {loadError}
+        </p>
+      )}
+
+      {loading ? (
+        <div className="flex justify-center py-10">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden="true" />
+        </div>
+      ) : investments.length === 0 ? (
+        <Empty text="Ainda não há investimentos registados." />
+      ) : (
+        <Section title={`Todos os investimentos (${investments.length})`}>
+          {investments.map((investment) => (
+            <AdminInvestmentRow
+              key={investment.id}
+              investment={investment}
+              investor={profiles[investment.user_id]}
+              onCancel={cancelInvestment}
+            />
+          ))}
+        </Section>
+      )}
+    </div>
+  );
+}
+
+function AdminInvestmentRow({
+  investment,
+  investor,
+  onCancel,
+}: {
+  investment: AdminInvestment;
+  investor: Profile | undefined;
+  onCancel: (investmentId: string) => Promise<{ error: string | null }>;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const status = investmentStatusLabel(investment.status);
+  const investorName = investor?.full_name?.trim() || investor?.username?.trim() || "Utilizador";
+
+  async function handleCancel() {
+    if (
+      !window.confirm(
+        `Cancelar o investimento de ${investorName} em “${investment.plan?.name ?? "plano"}”? O valor de entrada (${formatKz(Number(investment.entry_amount))}) será devolvido à carteira do utilizador.`,
+      )
+    ) {
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+    const result = await onCancel(investment.id);
+    setBusy(false);
+    if (result.error) setError(result.error);
+  }
+
+  return (
+    <article className="rounded-2xl bg-card p-3 shadow-sm">
+      <div className="flex items-start gap-3">
+        {investment.plan?.image_url ? (
+          <img
+            src={investment.plan.image_url}
+            alt=""
+            className="h-14 w-14 shrink-0 rounded-xl object-cover"
+          />
+        ) : (
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-secondary text-navy-900">
+            <TrendingUp className="h-5 w-5" aria-hidden="true" />
+          </span>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="truncate text-sm font-semibold text-card-foreground">
+              {investment.plan?.name ?? "Plano removido"}
+            </p>
+            <span
+              className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${status.className}`}
+            >
+              {status.label}
+            </span>
+          </div>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">{investorName}</p>
+          <p className="text-xs text-muted-foreground">
+            Entrada: {formatKz(Number(investment.entry_amount))}
+          </p>
+          <p className="text-xs font-semibold text-brand-green-dark">
+            Retorno esperado: {formatKz(Number(investment.expected_amount))}
+          </p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Início: {formatDate(investment.started_at)} · Termina: {formatDate(investment.ends_at)}
+          </p>
+        </div>
+      </div>
+
+      {investment.status === "active" && (
+        <button
+          type="button"
+          onClick={handleCancel}
+          disabled={busy}
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/5 py-2.5 text-xs font-semibold text-destructive transition hover:bg-destructive/10 disabled:opacity-60"
+        >
+          {busy ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+          ) : (
+            <Ban className="h-3.5 w-3.5" aria-hidden="true" />
+          )}
+          {busy ? "A cancelar…" : "Cancelar investimento"}
+        </button>
+      )}
+      {error && <p className="mt-2 text-[11px] font-medium text-destructive">{error}</p>}
     </article>
   );
 }
@@ -1484,7 +1816,9 @@ function AdminPostRow({
     post.category === "evento" ? "Evento" : post.category === "novidade" ? "Novidade" : "Notícia";
 
   async function handleDelete() {
-    if (!window.confirm(`Eliminar a publicação “${post.title}”? Esta ação não pode ser desfeita.`)) {
+    if (
+      !window.confirm(`Eliminar a publicação “${post.title}”? Esta ação não pode ser desfeita.`)
+    ) {
       return;
     }
 
@@ -1498,25 +1832,25 @@ function AdminPostRow({
   return (
     <article className="rounded-2xl bg-card p-3 shadow-sm">
       <div className="flex items-start gap-3">
-      {post.image_url ? (
-        <img src={post.image_url} alt="" className="h-16 w-16 shrink-0 rounded-xl object-cover" />
-      ) : (
-        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-secondary text-navy-900">
-          <Newspaper className="h-5 w-5" aria-hidden="true" />
-        </span>
-      )}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="truncate text-sm font-semibold text-card-foreground">{post.title}</p>
-          <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
-            {categoryLabel}
+        {post.image_url ? (
+          <img src={post.image_url} alt="" className="h-16 w-16 shrink-0 rounded-xl object-cover" />
+        ) : (
+          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-secondary text-navy-900">
+            <Newspaper className="h-5 w-5" aria-hidden="true" />
           </span>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="truncate text-sm font-semibold text-card-foreground">{post.title}</p>
+            <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+              {categoryLabel}
+            </span>
+          </div>
+          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+            {post.body || "Sem conteúdo adicional."}
+          </p>
+          <p className="mt-1.5 text-[11px] text-muted-foreground">{formatDate(post.created_at)}</p>
         </div>
-        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-          {post.body || "Sem conteúdo adicional."}
-        </p>
-        <p className="mt-1.5 text-[11px] text-muted-foreground">{formatDate(post.created_at)}</p>
-      </div>
       </div>
       <button
         type="button"
@@ -1844,10 +2178,7 @@ function AdminInvoiceSheet({
           <div className="mt-4 flex items-center justify-between">
             <span className="text-sm text-slate-500">{isIn ? "Valor" : "Valor enviado"}</span>
             <span className="font-display text-2xl font-bold text-slate-900">
-              Kz{" "}
-              {formatKz(requestedAmount)
-                .replace("Kz", "")
-                .trim()}
+              Kz {formatKz(requestedAmount).replace("Kz", "").trim()}
             </span>
           </div>
           {!isIn && fee > 0 && (
