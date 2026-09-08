@@ -103,7 +103,7 @@ export function calculateAge(birthDate: string | null | undefined): number | nul
   return age >= 0 ? age : null;
 }
 
-export function kycStatusLabel(status: KycStatus | undefined): string {
+export function kycStatusLabel(status: KycStatus | "not_started" | undefined): string {
   switch (status) {
     case "verified":
       return "Verificado";
