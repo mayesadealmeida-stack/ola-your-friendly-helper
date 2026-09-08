@@ -405,7 +405,7 @@ function AccountTile({
   icon: LucideIcon;
   label: string;
   to: string;
-  badge?: MenuBadge;
+  badge?: MenuBadge | undefined;
 }) {
   return (
     <Link

@@ -489,7 +489,7 @@ function MyContributions({
                 Saldo insuficiente na carteira para enviar esta contribuição.
               </p>
               <Link
-                to="/carteira/depositar"
+                to="/perfil/depositar"
                 className="mt-2 inline-block rounded-lg bg-brand-green px-3.5 py-2 text-xs font-semibold text-primary-foreground transition hover:bg-brand-green-dark"
               >
                 Depositar na carteira

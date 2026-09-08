@@ -15,6 +15,8 @@ import {
   MessageCircle,
   Share2,
   ShieldCheck,
+  HandCoins,
+
   type LucideIcon,
 } from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
@@ -195,9 +197,19 @@ function RechargeWithdrawButtons() {
         </span>
         Retirar
       </Link>
+      <Link
+        to="/minha-coleta"
+        className="col-span-2 flex items-center justify-center gap-2 rounded-2xl border border-border bg-card py-4 font-display text-sm font-semibold text-card-foreground shadow-sm transition hover:bg-accent"
+      >
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-green/20 text-navy-900">
+          <HandCoins className="h-3.5 w-3.5" strokeWidth={2.5} aria-hidden="true" />
+        </span>
+        Minha Coleta
+      </Link>
     </section>
   );
 }
+
 
 function WalletCard({
   depositKz,
