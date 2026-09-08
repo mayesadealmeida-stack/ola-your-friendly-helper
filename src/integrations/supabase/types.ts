@@ -379,6 +379,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_investments: {
+        Row: {
+          created_at: string
+          ends_at: string
+          entry_amount: number
+          expected_amount: number
+          id: string
+          plan_id: string
+          redeemed_at: string | null
+          started_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ends_at: string
+          entry_amount: number
+          expected_amount: number
+          id?: string
+          plan_id: string
+          redeemed_at?: string | null
+          started_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          ends_at?: string
+          entry_amount?: number
+          expected_amount?: number
+          id?: string
+          plan_id?: string
+          redeemed_at?: string | null
+          started_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       kyc_basic: {
         Row: {
           address: string
@@ -669,6 +708,10 @@ export type Database = {
           total_saidas: number
         }[]
       }
+      create_investment: {
+        Args: { p_plan_id: string }
+        Returns: Database["public"]["Tables"]["user_investments"]["Row"]
+      }
       admin_override_compliance: {
         Args: {
           _new_level: Database["public"]["Enums"]["compliance_level"]
@@ -910,6 +953,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      redeem_investment: {
+        Args: { p_investment_id: string }
+        Returns: Database["public"]["Tables"]["user_investments"]["Row"]
       }
     }
     Enums: {

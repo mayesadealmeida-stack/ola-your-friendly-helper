@@ -156,3 +156,68 @@
 #lovable-badge {
   display: none !important;
 }
+
+@keyframes investment-ring-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgb(247 147 26 / 20%),
+      0 0 24px rgb(247 147 26 / 12%),
+      inset 0 0 24px rgb(247 147 26 / 8%);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgb(247 147 26 / 45%),
+      0 0 34px rgb(247 147 26 / 25%),
+      inset 0 0 32px rgb(247 147 26 / 14%);
+  }
+}
+
+@keyframes investment-bitcoin-float {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.04);
+  }
+}
+
+.investment-energy-ring {
+  display: flex;
+  width: 244px;
+  height: 244px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  padding: 10px;
+  animation: investment-ring-pulse 3.2s ease-in-out infinite;
+  transform: rotate(-90deg);
+}
+
+.investment-energy-core {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background:
+    radial-gradient(circle at 50% 35%, rgb(247 147 26 / 13%), transparent 42%),
+    #10141c;
+  text-align: center;
+  transform: rotate(90deg);
+}
+
+.investment-bitcoin {
+  color: #f7931a;
+  font-family: "Space Grotesk", "Inter", sans-serif;
+  font-size: 4rem;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow:
+    0 0 10px rgb(247 147 26 / 80%),
+    0 0 26px rgb(247 147 26 / 35%);
+  animation: investment-bitcoin-float 2.8s ease-in-out infinite;
+}

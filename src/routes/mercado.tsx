@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ArrowRight, CheckCircle2, Loader2, TrendingUp, X } from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
 import { usePlans, type InvestmentPlan } from "@/hooks/use-plans";
+import { useInvestments } from "@/hooks/use-investments";
 import { formatKz } from "@/lib/groups";
 
 export const Route = createFileRoute("/mercado")({
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/mercado")({
 
 function MercadoPage() {
   const { plans, loading, error } = usePlans();
+  const { createInvestment } = useInvestments();
   const [selectedPlan, setSelectedPlan] = useState<InvestmentPlan | null>(null);
 
   return (
@@ -58,7 +60,11 @@ function MercadoPage() {
       </div>
 
       {selectedPlan && (
-        <InvestDialog plan={selectedPlan} onClose={() => setSelectedPlan(null)} />
+        <InvestDialog
+          plan={selectedPlan}
+          onClose={() => setSelectedPlan(null)}
+          onConfirm={() => createInvestment(selectedPlan.id)}
+        />
       )}
 
       <BottomNav active="mercado" />
@@ -123,8 +129,34 @@ function MarketPlanCard({
   );
 }
 
-function InvestDialog({ plan, onClose }: { plan: InvestmentPlan; onClose: () => void }) {
+function InvestDialog({
+  plan,
+  onClose,
+  onConfirm,
+}: {
+  plan: InvestmentPlan;
+  onClose: () => void;
+  onConfirm: () => Promise<{ error: string | null }>;
+}) {
   const [confirmed, setConfirmed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleConfirm() {
+    setError(null);
+    setBusy(true);
+    const result = await onConfirm();
+    setBusy(false);
+    if (result.error) {
+      setError(
+        result.error.includes("Saldo insuficiente")
+          ? "Saldo insuficiente. Recarregue a sua carteira para investir neste plano."
+          : result.error,
+      );
+      return;
+    }
+    setConfirmed(true);
+  }
 
   return (
     <div className="fixed inset-0 z-30 flex items-end justify-center bg-black/50 px-4 pb-6 sm:items-center">
@@ -147,14 +179,14 @@ function InvestDialog({ plan, onClose }: { plan: InvestmentPlan; onClose: () => 
                 Plano selecionado
               </p>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                Para concluir, recarregue a sua carteira com o valor de entrada e a equipa poderá
-                confirmar o investimento.
+                O investimento foi criado e já pode acompanhá-lo em Minha Coleta. O valor vai
+                crescer progressivamente até ao fim do prazo.
               </p>
               <Link
-                to="/perfil/depositar"
+                to="/minha-coleta"
                 className="mt-5 block rounded-2xl bg-brand-green py-3.5 text-center text-sm font-bold text-primary-foreground"
               >
-                Recarregar carteira
+                Ver Minha Coleta
               </Link>
               <button type="button" onClick={onClose} className="mt-3 text-xs font-semibold text-muted-foreground">
                 Fechar
@@ -178,12 +210,19 @@ function InvestDialog({ plan, onClose }: { plan: InvestmentPlan; onClose: () => 
                   </strong>
                 </div>
               </div>
+              {error && (
+                <p className="mt-3 rounded-xl bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
+                  {error}
+                </p>
+              )}
               <button
                 type="button"
-                onClick={() => setConfirmed(true)}
-                className="mt-5 w-full rounded-2xl bg-brand-green py-3.5 text-sm font-bold text-primary-foreground"
+                onClick={handleConfirm}
+                disabled={busy}
+                className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-green py-3.5 text-sm font-bold text-primary-foreground disabled:opacity-60"
               >
-                Confirmar interesse
+                {busy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+                {busy ? "A criar investimento…" : "Confirmar investimento"}
               </button>
             </>
           )}
