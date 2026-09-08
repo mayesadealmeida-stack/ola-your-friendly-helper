@@ -12,13 +12,14 @@ export const TASKS_QUERY_KEY = ["tasks"] as const;
 
 type TasksData = {
   products: TaskProduct[];
+  allProducts: TaskProduct[];
   cycle: TaskCycle | null;
   orders: TaskOrder[];
 };
 
 async function fetchTasks(): Promise<TasksData> {
   const { data: userData } = await supabase.auth.getUser();
-  if (!userData.user) return { products: [], cycle: null, orders: [] };
+  if (!userData.user) return { products: [], allProducts: [], cycle: null, orders: [] };
 
   const [{ data: products, error: productsError }, { data: cycles, error: cyclesError }] =
     await Promise.all([
@@ -38,8 +39,9 @@ async function fetchTasks(): Promise<TasksData> {
   if (productsError) throw productsError;
   if (cyclesError) throw cyclesError;
 
+  const allProducts = (products ?? []) as TaskProduct[];
   const cycle = cycles?.[0] ?? null;
-  if (!cycle) return { products: products ?? [], cycle: null, orders: [] };
+  if (!cycle) return { products: allProducts, allProducts, cycle: null, orders: [] };
 
   const { data: orders, error: ordersError } = await supabase
     .from("task_orders")
@@ -49,8 +51,13 @@ async function fetchTasks(): Promise<TasksData> {
 
   if (ordersError) throw ordersError;
 
+  const completedProductIds = new Set((orders ?? []).map((order) => order.product_id));
+
   return {
-    products: (products ?? []) as TaskProduct[],
+    // Cada produto só pode ser usado uma vez no mesmo ciclo. Os produtos
+    // continuam ativos para poderem voltar a aparecer num ciclo futuro.
+    products: allProducts.filter((product) => !completedProductIds.has(product.id)),
+    allProducts,
     cycle: cycle as TaskCycle,
     orders: (orders ?? []) as TaskOrder[],
   };
@@ -93,6 +100,7 @@ export function useTasks() {
 
   return {
     products: query.data?.products ?? [],
+    allProducts: query.data?.allProducts ?? [],
     cycle: query.data?.cycle ?? null,
     orders: query.data?.orders ?? [],
     loading: query.isPending,

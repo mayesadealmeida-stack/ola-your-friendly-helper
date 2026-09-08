@@ -78,6 +78,7 @@ const ADMIN_ACTIONS: {
   label: string;
   description: string;
   icon: LucideIcon;
+  badge?: "depositos" | "saques";
 }[] = [
   { key: "resumo", label: "Resumo", description: "Visão geral", icon: LayoutDashboard },
   {
@@ -85,8 +86,15 @@ const ADMIN_ACTIONS: {
     label: "Pagamentos",
     description: "Confirmar entradas",
     icon: ArrowDownLeft,
+    badge: "depositos",
   },
-  { key: "saques", label: "Levantamentos", description: "Pedidos de saída", icon: ArrowUpRight },
+  {
+    key: "saques",
+    label: "Levantamentos",
+    description: "Pedidos de saída",
+    icon: ArrowUpRight,
+    badge: "saques",
+  },
   { key: "usuarios", label: "Usuários", description: "Contas e saldos", icon: Users },
   { key: "faturas", label: "Faturas", description: "Comprovativos", icon: FileText },
   {
@@ -213,6 +221,12 @@ function AdminPage() {
               {ADMIN_ACTIONS.map((action) => {
                 const Icon = action.icon;
                 const active = tab === action.key;
+                const pendingCount =
+                  action.badge === "depositos"
+                    ? finance.summary.n_depositos_pendentes
+                    : action.badge === "saques"
+                      ? finance.summary.n_saques_pendentes
+                      : 0;
                 return (
                   <button
                     key={action.key}
@@ -231,8 +245,19 @@ function AdminPage() {
                     >
                       <Icon className="h-4.5 w-4.5" aria-hidden="true" />
                     </span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-xs font-bold">{action.label}</span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-center gap-2 text-xs font-bold">
+                        <span className="truncate">{action.label}</span>
+                        {pendingCount > 0 && (
+                          <span
+                            className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-600 px-1.5 text-[10px] font-bold text-white shadow-sm"
+                            aria-label={`${pendingCount} pendência(s)`}
+                            title={`${pendingCount} pendência(s) por tratar`}
+                          >
+                            {pendingCount > 99 ? "99+" : pendingCount}
+                          </span>
+                        )}
+                      </span>
                       <span
                         className={`mt-0.5 block truncate text-[10px] ${
                           active ? "text-white/65" : "text-muted-foreground"

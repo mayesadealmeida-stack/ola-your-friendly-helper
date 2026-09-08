@@ -168,7 +168,7 @@ function TasksPage() {
               </section>
 
               {tasks.orders.length > 0 && (
-                <TaskHistory tasks={tasks.orders} products={tasks.products} />
+                <TaskHistory tasks={tasks.orders} products={tasks.allProducts} />
               )}
             </>
           )}
