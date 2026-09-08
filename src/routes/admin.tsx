@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowDownLeft,
   ArrowUpRight,
+  CircleDollarSign,
   CheckCircle2,
   ChevronLeft,
   Copy,
@@ -14,8 +15,10 @@ import {
   Lock,
   Newspaper,
   PlusCircle,
+  Percent,
   RefreshCw,
   ShieldCheck,
+  Trash2,
   KeyRound,
   ClipboardCheck,
   TrendingUp,
@@ -68,6 +71,8 @@ type TabKey =
   | "saques"
   | "usuarios"
   | "faturas"
+  | "faturamento-taxas"
+  | "taxa-saque"
   | "planos"
   | "noticias"
   | "tarefas"
@@ -89,6 +94,13 @@ const ADMIN_ACTIONS: {
   { key: "saques", label: "Levantamentos", description: "Pedidos de saída", icon: ArrowUpRight },
   { key: "usuarios", label: "Usuários", description: "Contas e saldos", icon: Users },
   { key: "faturas", label: "Faturas", description: "Comprovativos", icon: FileText },
+  {
+    key: "faturamento-taxas",
+    label: "Taxas",
+    description: "Faturamento de saques",
+    icon: CircleDollarSign,
+  },
+  { key: "taxa-saque", label: "Taxa de saque", description: "Definir percentagem", icon: Percent },
   { key: "planos", label: "Planos", description: "Gerir investimentos", icon: TrendingUp },
   { key: "noticias", label: "Notícias", description: "Publicar novidades", icon: Newspaper },
   { key: "tarefas", label: "Tarefas", description: "Rodadas e pagamentos", icon: ClipboardCheck },
@@ -251,6 +263,8 @@ function AdminPage() {
               {tab === "saques" && <MovimentosTab finance={finance} kind="levantamento" />}
               {tab === "usuarios" && <UsuariosTab finance={finance} />}
               {tab === "faturas" && <FaturasTab finance={finance} />}
+              {tab === "faturamento-taxas" && <TaxasFaturamentoTab finance={finance} />}
+              {tab === "taxa-saque" && <TaxaSaqueTab finance={finance} />}
               {tab === "planos" && <PlanosTab />}
               {tab === "noticias" && <NoticiasTab posts={posts} />}
               {tab === "tarefas" && <TarefasTab finance={finance} />}
@@ -464,6 +478,11 @@ function TxRow({
             {isIn ? "+" : "−"}
             {formatKz(Math.abs(Number(tx.amount)))}
           </p>
+          {tx.type === "levantamento" && Number(tx.fee_amount ?? 0) > 0 && (
+            <p className="mt-0.5 text-[10px] text-muted-foreground">
+              Taxa: {formatKz(Number(tx.fee_amount))}
+            </p>
+          )}
           <span
             className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${
               STATUS_STYLE[tx.status] ?? "bg-secondary text-muted-foreground"
@@ -1271,7 +1290,7 @@ function NoticiasTab({ posts }: { posts: AdminPosts }) {
       ) : (
         <Section title={`Publicações (${posts.posts.length})`}>
           {posts.posts.map((post) => (
-            <AdminPostRow key={post.id} post={post} />
+            <AdminPostRow key={post.id} post={post} onDelete={posts.deletePost} />
           ))}
         </Section>
       )}
@@ -1432,12 +1451,33 @@ function NewsForm({
   );
 }
 
-function AdminPostRow({ post }: { post: AdminPost }) {
+function AdminPostRow({
+  post,
+  onDelete,
+}: {
+  post: AdminPost;
+  onDelete: (post: AdminPost) => Promise<{ error: string | null }>;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const categoryLabel =
     post.category === "evento" ? "Evento" : post.category === "novidade" ? "Novidade" : "Notícia";
 
+  async function handleDelete() {
+    if (!window.confirm(`Eliminar a publicação “${post.title}”? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+    const result = await onDelete(post);
+    setBusy(false);
+    if (result.error) setError(result.error);
+  }
+
   return (
-    <article className="flex items-start gap-3 rounded-2xl bg-card p-3 shadow-sm">
+    <article className="rounded-2xl bg-card p-3 shadow-sm">
+      <div className="flex items-start gap-3">
       {post.image_url ? (
         <img src={post.image_url} alt="" className="h-16 w-16 shrink-0 rounded-xl object-cover" />
       ) : (
@@ -1457,7 +1497,175 @@ function AdminPostRow({ post }: { post: AdminPost }) {
         </p>
         <p className="mt-1.5 text-[11px] text-muted-foreground">{formatDate(post.created_at)}</p>
       </div>
+      </div>
+      <button
+        type="button"
+        onClick={handleDelete}
+        disabled={busy}
+        className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-destructive/20 bg-destructive/5 py-2.5 text-xs font-semibold text-destructive transition hover:bg-destructive/10 disabled:opacity-60"
+      >
+        {busy ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+        ) : (
+          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+        )}
+        {busy ? "A eliminar…" : "Eliminar publicação"}
+      </button>
+      {error && <p className="mt-2 text-[11px] font-medium text-destructive">{error}</p>}
     </article>
+  );
+}
+
+function TaxasFaturamentoTab({ finance }: { finance: Finance }) {
+  const report = finance.feeSummary;
+
+  return (
+    <div className="space-y-4">
+      <section className="rounded-2xl bg-card p-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-green/15 text-brand-green-dark">
+            <CircleDollarSign className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div>
+            <h2 className="font-display text-sm font-semibold text-card-foreground">
+              Faturamento por taxa de saque
+            </h2>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Acompanhe quanto a plataforma já faturou nas taxas dos levantamentos aprovados.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-2 gap-3">
+        <StatCard
+          label="Taxas confirmadas"
+          value={formatKz(report.total_taxas_confirmadas)}
+          tone="green"
+          hint="Faturamento realizado"
+        />
+        <StatCard
+          label="Taxas pendentes"
+          value={formatKz(report.total_taxas_pendentes)}
+          tone="amber"
+          hint="Pedidos por aprovar"
+        />
+        <StatCard
+          label="Faturamento total"
+          value={formatKz(report.total_taxas_geral)}
+          hint="Confirmado + pendente"
+        />
+        <StatCard
+          label="Levantamentos pagos"
+          value={String(report.total_saques_confirmados)}
+          hint={`Valor: ${formatKz(report.valor_saques_confirmados)}`}
+        />
+      </div>
+
+      <div className="rounded-2xl bg-card p-4 text-xs leading-relaxed text-muted-foreground shadow-sm">
+        A taxa é registada no momento em que o pedido é criado. Alterações futuras não mudam o
+        histórico dos pedidos anteriores.
+      </div>
+    </div>
+  );
+}
+
+function TaxaSaqueTab({ finance }: { finance: Finance }) {
+  const [value, setValue] = useState(String(finance.withdrawalFeePercent));
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
+
+  useEffect(() => {
+    setValue(String(finance.withdrawalFeePercent));
+  }, [finance.withdrawalFeePercent]);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const normalized = Number(value.replace(",", "."));
+    if (!Number.isFinite(normalized) || normalized < 0 || normalized > 100) {
+      setMessage({ type: "error", text: "Digite uma taxa entre 0% e 100%." });
+      return;
+    }
+
+    setBusy(true);
+    setMessage(null);
+    const result = await finance.updateWithdrawalFee(normalized);
+    setBusy(false);
+    setMessage(
+      result.error
+        ? { type: "error", text: result.error }
+        : { type: "ok", text: "Taxa de saque atualizada com sucesso." },
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <section className="rounded-2xl bg-card p-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-navy-900/10 text-navy-900">
+            <Percent className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div>
+            <h2 className="font-display text-sm font-semibold text-card-foreground">
+              Definir taxa de saque
+            </h2>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Escolha a percentagem que será cobrada nos próximos pedidos de levantamento.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl bg-card p-4 shadow-sm">
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
+            Percentagem da taxa
+          </span>
+          <div className="flex items-center gap-2 rounded-xl border border-input bg-background px-3.5 py-2.5 focus-within:border-brand-green">
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              value={value}
+              onChange={(event) => setValue(event.target.value)}
+              className="w-full bg-transparent text-sm outline-none"
+              placeholder="0"
+              required
+            />
+            <span className="text-sm font-bold text-muted-foreground">%</span>
+          </div>
+        </label>
+
+        <div className="rounded-xl bg-secondary/70 p-3 text-xs leading-relaxed text-muted-foreground">
+          Exemplo: com uma taxa de <strong className="text-card-foreground">{value || 0}%</strong>,
+          um pedido de Kz 10.000 gera uma taxa de Kz{" "}
+          <strong className="text-card-foreground">
+            {formatKz((10000 * (Number(value.replace(",", ".")) || 0)) / 100)}
+          </strong>
+          .
+        </div>
+
+        {message && (
+          <p
+            className={`text-xs font-medium ${
+              message.type === "ok" ? "text-brand-green-dark" : "text-destructive"
+            }`}
+          >
+            {message.text}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={busy}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-navy-900 py-3 text-sm font-semibold text-white transition hover:bg-navy-800 disabled:opacity-60"
+        >
+          {busy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
+          {busy ? "A guardar…" : "Guardar taxa"}
+        </button>
+      </form>
+    </div>
   );
 }
 
@@ -1546,6 +1754,10 @@ function AdminInvoiceSheet({
 }) {
   const invoiceNumber = `GM-${tx.id.slice(0, 8).toUpperCase()}`;
   const isIn = tx.type === "deposito";
+  const fee = Number(tx.fee_amount ?? 0);
+  const requestedAmount = Number(
+    tx.requested_amount ?? Math.abs(Number(tx.amount)) - (isIn ? 0 : fee),
+  );
 
   return (
     <div
@@ -1610,14 +1822,20 @@ function AdminInvoiceSheet({
           </div>
 
           <div className="mt-4 flex items-center justify-between">
-            <span className="text-sm text-slate-500">Valor</span>
+            <span className="text-sm text-slate-500">{isIn ? "Valor" : "Valor enviado"}</span>
             <span className="font-display text-2xl font-bold text-slate-900">
               Kz{" "}
-              {formatKz(Math.abs(Number(tx.amount)))
+              {formatKz(requestedAmount)
                 .replace("Kz", "")
                 .trim()}
             </span>
           </div>
+          {!isIn && fee > 0 && (
+            <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+              <span>Taxa de saque</span>
+              <span>Kz {formatKz(fee).replace("Kz", "").trim()}</span>
+            </div>
+          )}
 
           <p className="mt-6 text-center text-[11px] text-slate-400">
             Fatura gerada automaticamente pela Group Mobil.

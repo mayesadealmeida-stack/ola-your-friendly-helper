@@ -23,6 +23,14 @@ export type AdminSummary = {
   n_contribuicoes_pendentes: number;
 };
 
+export type WithdrawalFeeSummary = {
+  total_taxas_confirmadas: number;
+  total_taxas_pendentes: number;
+  total_taxas_geral: number;
+  total_saques_confirmados: number;
+  valor_saques_confirmados: number;
+};
+
 const EMPTY_SUMMARY: AdminSummary = {
   total_entradas: 0,
   total_saidas: 0,
@@ -34,6 +42,14 @@ const EMPTY_SUMMARY: AdminSummary = {
   n_utilizadores: 0,
   total_contribuicoes_pagas: 0,
   n_contribuicoes_pendentes: 0,
+};
+
+const EMPTY_FEE_SUMMARY: WithdrawalFeeSummary = {
+  total_taxas_confirmadas: 0,
+  total_taxas_pendentes: 0,
+  total_taxas_geral: 0,
+  total_saques_confirmados: 0,
+  valor_saques_confirmados: 0,
 };
 
 export const ADMIN_QUERY_KEY = ["admin-finance"] as const;
@@ -65,6 +81,8 @@ export function useIsAdmin() {
 
 type AdminData = {
   summary: AdminSummary;
+  withdrawalFeePercent: number;
+  feeSummary: WithdrawalFeeSummary;
   transactions: WalletTx[];
   profiles: Record<string, Profile>;
   contributions: (ContributionRow & { participant_name: string; group_name: string })[];
@@ -84,6 +102,8 @@ async function fetchAdminData(): Promise<AdminData> {
     taskOrdersRes,
     taskCyclesRes,
     taskProductsRes,
+    feeSettingsRes,
+    feeSummaryRes,
   ] = await Promise.all([
     supabase.rpc("admin_finance_summary"),
     supabase
@@ -98,6 +118,8 @@ async function fetchAdminData(): Promise<AdminData> {
     supabase.from("task_orders").select("*").order("created_at", { ascending: false }).limit(500),
     supabase.from("task_cycles").select("*").order("created_at", { ascending: false }).limit(300),
     supabase.from("task_products").select("*"),
+    supabase.rpc("get_withdrawal_fee_settings" as never, {} as never),
+    supabase.rpc("admin_withdrawal_fee_summary" as never, {} as never),
   ]);
 
   const rawSummary = Array.isArray(summaryRes.data) ? summaryRes.data[0] : summaryRes.data;
@@ -135,8 +157,24 @@ async function fetchAdminData(): Promise<AdminData> {
     taskProducts[product.id] = product as TaskProduct;
   }
 
+  const feeSettingsRow = Array.isArray(feeSettingsRes.data)
+    ? feeSettingsRes.data[0]
+    : feeSettingsRes.data;
+  const feeSummaryRow = Array.isArray(feeSummaryRes.data) ? feeSummaryRes.data[0] : feeSummaryRes.data;
+  const feeSummary = feeSummaryRow
+    ? {
+        total_taxas_confirmadas: Number(feeSummaryRow.total_taxas_confirmadas ?? 0),
+        total_taxas_pendentes: Number(feeSummaryRow.total_taxas_pendentes ?? 0),
+        total_taxas_geral: Number(feeSummaryRow.total_taxas_geral ?? 0),
+        total_saques_confirmados: Number(feeSummaryRow.total_saques_confirmados ?? 0),
+        valor_saques_confirmados: Number(feeSummaryRow.valor_saques_confirmados ?? 0),
+      }
+    : EMPTY_FEE_SUMMARY;
+
   return {
     summary,
+    withdrawalFeePercent: Number(feeSettingsRow?.fee_percent ?? 0),
+    feeSummary,
     transactions: (txRes.data ?? []) as WalletTx[],
     profiles,
     contributions,
@@ -198,8 +236,23 @@ export function useAdminFinance(enabled: boolean) {
     [refresh],
   );
 
+  const updateWithdrawalFee = useCallback(
+    async (feePercent: number): Promise<{ error: string | null }> => {
+      const { error } = await supabase.rpc(
+        "admin_update_withdrawal_fee" as never,
+        { p_fee_percent: feePercent } as never,
+      );
+      if (error) return { error: error.message };
+      await refresh();
+      return { error: null };
+    },
+    [refresh],
+  );
+
   return {
     summary: query.data?.summary ?? EMPTY_SUMMARY,
+    withdrawalFeePercent: query.data?.withdrawalFeePercent ?? 0,
+    feeSummary: query.data?.feeSummary ?? EMPTY_FEE_SUMMARY,
     transactions: query.data?.transactions ?? [],
     profiles: query.data?.profiles ?? {},
     contributions: query.data?.contributions ?? [],
@@ -211,5 +264,6 @@ export function useAdminFinance(enabled: boolean) {
     review,
     proofUrl,
     grantBalance,
+    updateWithdrawalFee,
   };
 }

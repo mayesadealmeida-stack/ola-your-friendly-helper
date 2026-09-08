@@ -73,14 +73,16 @@ export function InstallAppBanner() {
         <p className="mt-3 rounded-xl bg-white/10 px-3 py-2.5 text-xs leading-relaxed text-white/80">
           {isIos ? (
             <>
-              No Safari, toque em <strong className="text-white">Partilhar</strong> e depois em{" "}
+              No Safari do iPhone/iPad, toque em <strong className="text-white">Partilhar</strong>{" "}
+              e depois em{" "}
               <strong className="text-white">Adicionar ao ecrã principal</strong>.
             </>
           ) : (
             <>
-              Abra o menu do navegador (⋮) e escolha{" "}
+              No Chrome ou Edge, abra o menu do navegador (⋮) e escolha{" "}
               <strong className="text-white">Instalar aplicação</strong> ou{" "}
-              <strong className="text-white">Adicionar ao ecrã principal</strong>.
+              <strong className="text-white">Adicionar ao ecrã principal</strong>. Se não aparecer,
+              atualize a página e tente novamente.
             </>
           )}
         </p>

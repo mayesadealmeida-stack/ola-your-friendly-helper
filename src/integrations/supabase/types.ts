@@ -728,11 +728,14 @@ export type Database = {
           confirmed_at: string | null
           contribution_id: string | null
           created_at: string
+          fee_amount: number
+          fee_percent: number
           group_id: string | null
           id: string
           method: Database["public"]["Enums"]["payment_method_key"] | null
           note: string | null
           proof_url: string | null
+          requested_amount: number | null
           review_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -745,11 +748,14 @@ export type Database = {
           confirmed_at?: string | null
           contribution_id?: string | null
           created_at?: string
+          fee_amount?: number
+          fee_percent?: number
           group_id?: string | null
           id?: string
           method?: Database["public"]["Enums"]["payment_method_key"] | null
           note?: string | null
           proof_url?: string | null
+          requested_amount?: number | null
           review_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -762,11 +768,14 @@ export type Database = {
           confirmed_at?: string | null
           contribution_id?: string | null
           created_at?: string
+          fee_amount?: number
+          fee_percent?: number
           group_id?: string | null
           id?: string
           method?: Database["public"]["Enums"]["payment_method_key"] | null
           note?: string | null
           proof_url?: string | null
+          requested_amount?: number | null
           review_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null

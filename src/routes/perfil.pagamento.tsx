@@ -25,10 +25,23 @@ function fmt(v: number) {
   return new Intl.NumberFormat("pt-AO").format(Math.round(v));
 }
 
+function fmtPercent(v: number) {
+  return new Intl.NumberFormat("pt-AO", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(v);
+}
+
 function PagamentoPage() {
   const navigate = useNavigate();
   const { notAuthenticated, loading: profileLoading, profile } = useProfile();
-  const { balance, transactions, loading: walletLoading, requestWithdrawal } = useWallet();
+  const {
+    balance,
+    transactions,
+    loading: walletLoading,
+    withdrawalFeePercent,
+    requestWithdrawal,
+  } = useWallet();
 
   const [showRequest, setShowRequest] = useState(false);
   const [invoiceTx, setInvoiceTx] = useState<(typeof transactions)[number] | null>(null);
@@ -107,6 +120,7 @@ function PagamentoPage() {
       {showRequest && (
         <RequestPaymentSheet
           balance={balance}
+          withdrawalFeePercent={withdrawalFeePercent}
           onClose={() => setShowRequest(false)}
           onSubmit={requestWithdrawal}
         />
@@ -130,6 +144,8 @@ function WithdrawalCard({
   tx: {
     id: string;
     amount: number;
+    fee_amount: number;
+    requested_amount: number | null;
     status: string;
     created_at: string;
     note: string | null;
@@ -137,12 +153,18 @@ function WithdrawalCard({
   };
   onViewInvoice: () => void;
 }) {
+  const fee = Number(tx.fee_amount ?? 0);
+  const requested = Number(tx.requested_amount ?? Math.abs(Number(tx.amount)) - fee);
+
   return (
     <div className="rounded-2xl bg-card p-4 shadow-sm">
       <div className="flex items-center justify-between">
         <div>
           <p className="font-display text-base font-bold text-card-foreground">
-            Kz {fmt(Math.abs(Number(tx.amount)))}
+            Kz {fmt(requested)}
+          </p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Taxa: Kz {fmt(fee)} · Descontado: Kz {fmt(requested + fee)}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
             {new Date(tx.created_at).toLocaleDateString("pt-AO", {
@@ -192,10 +214,12 @@ function StatusBadge({ status }: { status: string }) {
 
 function RequestPaymentSheet({
   balance,
+  withdrawalFeePercent,
   onClose,
   onSubmit,
 }: {
   balance: number;
+  withdrawalFeePercent: number;
   onClose: () => void;
   onSubmit: (
     amount: number,
@@ -212,6 +236,8 @@ function RequestPaymentSheet({
 
   const amountValue = Number(amount.replace(/\D/g, ""));
   const methods: PaymentMethodKey[] = ["unitel_money", "paypay_africa", "bank_transfer"];
+  const feeValue = Math.round(((amountValue * withdrawalFeePercent) / 100) * 100) / 100;
+  const totalDebit = amountValue + feeValue;
 
   async function handleSubmit() {
     setError(null);
@@ -219,8 +245,8 @@ function RequestPaymentSheet({
       setError("Indique o valor que quer receber.");
       return;
     }
-    if (amountValue > balance) {
-      setError("Esse valor é maior do que o seu saldo disponível.");
+    if (totalDebit > balance) {
+      setError("O valor mais a taxa de saque é maior do que o seu saldo disponível.");
       return;
     }
     if (!destination.trim()) {
@@ -302,6 +328,16 @@ function RequestPaymentSheet({
                 placeholder="0"
                 className="w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-sm outline-none transition focus:border-brand-green focus:ring-2 focus:ring-brand-green/30"
               />
+              <div className="rounded-xl bg-secondary/70 px-3 py-2 text-xs text-muted-foreground">
+                <div className="flex justify-between">
+                  <span>Taxa de saque ({fmtPercent(withdrawalFeePercent)}%)</span>
+                  <span className="font-semibold text-card-foreground">Kz {fmt(feeValue)}</span>
+                </div>
+                <div className="mt-1 flex justify-between border-t border-border/60 pt-1">
+                  <span>Total descontado do saldo</span>
+                  <span className="font-semibold text-card-foreground">Kz {fmt(totalDebit)}</span>
+                </div>
+              </div>
             </div>
 
             <div className="mt-4 space-y-1.5">
@@ -364,7 +400,14 @@ function InvoiceSheet({
   userName,
   onClose,
 }: {
-  tx: { id: string; amount: number; created_at: string; confirmed_at: string | null };
+  tx: {
+    id: string;
+    amount: number;
+    requested_amount: number | null;
+    fee_amount: number;
+    created_at: string;
+    confirmed_at: string | null;
+  };
   userName: string;
   onClose: () => void;
 }) {
@@ -424,9 +467,15 @@ function InvoiceSheet({
           <div className="mt-4 flex items-center justify-between">
             <span className="text-sm text-slate-500">Valor pago</span>
             <span className="font-display text-2xl font-bold text-slate-900">
-              Kz {fmt(Math.abs(Number(tx.amount)))}
+              Kz {fmt(Number(tx.requested_amount ?? Math.abs(Number(tx.amount))))}
             </span>
           </div>
+          {Number(tx.fee_amount ?? 0) > 0 && (
+            <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+              <span>Taxa de saque</span>
+              <span>Kz {fmt(Number(tx.fee_amount))}</span>
+            </div>
+          )}
 
           <p className="mt-6 text-center text-[11px] text-slate-400">
             Fatura gerada automaticamente pela Group Mobil.

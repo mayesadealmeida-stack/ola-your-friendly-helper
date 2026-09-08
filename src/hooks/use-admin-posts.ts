@@ -85,11 +85,34 @@ export function useAdminPosts(enabled: boolean) {
     [refresh],
   );
 
+  const deletePost = useCallback(
+    async (post: AdminPost): Promise<{ error: string | null }> => {
+      const { error } = await supabase.from("posts").delete().eq("id", post.id);
+      if (error) return { error: error.message };
+
+      // A imagem é opcional. Remover o ficheiro depois do registo evita deixar
+      // imagens órfãs no bucket quando uma publicação é eliminada.
+      if (post.image_url) {
+        const marker = "/storage/v1/object/public/posts/";
+        const markerIndex = post.image_url.indexOf(marker);
+        if (markerIndex >= 0) {
+          const path = decodeURIComponent(post.image_url.slice(markerIndex + marker.length));
+          await supabase.storage.from("posts").remove([path]);
+        }
+      }
+
+      await refresh();
+      return { error: null };
+    },
+    [refresh],
+  );
+
   return {
     posts: query.data ?? [],
     loading: query.isPending,
     error: query.error?.message ?? null,
     createPost,
+    deletePost,
     refresh,
   };
 }

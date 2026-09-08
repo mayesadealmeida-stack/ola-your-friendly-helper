@@ -13,6 +13,7 @@ import type { PaymentMethodKey } from "@/hooks/use-payment-methods";
 export type WalletTransaction = Tables<"wallet_transactions">;
 
 export const WALLET_QUERY_KEY = ["wallet"] as const;
+export const WITHDRAWAL_FEE_QUERY_KEY = ["withdrawal-fee"] as const;
 
 const MAX_PROOF_BYTES = 8 * 1024 * 1024; // 8MB
 
@@ -56,6 +57,21 @@ export function useWallet() {
   );
 
   const userId = query.data?.userId ?? null;
+  const withdrawalFeeQuery = useQuery({
+    queryKey: WITHDRAWAL_FEE_QUERY_KEY,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc(
+        "get_withdrawal_fee_settings" as never,
+        {} as never,
+      );
+      if (error) return 0;
+      const row = Array.isArray(data) ? data[0] : data;
+      return Number((row as { fee_percent?: number } | null)?.fee_percent ?? 0);
+    },
+    enabled: Boolean(userId),
+    staleTime: 60 * 1000,
+  });
+  const withdrawalFeePercent = withdrawalFeeQuery.data ?? 0;
 
   const requestDeposit = useCallback(
     async (
@@ -110,8 +126,9 @@ export function useWallet() {
     ): Promise<{ error: string | null }> => {
       if (!userId) return { error: "Sessão expirada. Entre novamente." };
       if (amountKz <= 0) return { error: "Indique um valor válido." };
-      if (amountKz > (query.data?.balance ?? 0)) {
-        return { error: "Saldo insuficiente para este pedido." };
+      const feeAmount = Math.round((amountKz * withdrawalFeePercent) / 100 * 100) / 100;
+      if (amountKz + feeAmount > (query.data?.balance ?? 0)) {
+        return { error: "Saldo insuficiente para o valor e a taxa de saque." };
       }
 
       const { error } = await supabase.rpc(
@@ -128,7 +145,7 @@ export function useWallet() {
       await refresh();
       return { error: null };
     },
-    [userId, refresh, query.data?.balance],
+    [userId, refresh, query.data?.balance, withdrawalFeePercent],
   );
 
   return {
@@ -136,6 +153,7 @@ export function useWallet() {
     balance: query.data?.balance ?? 0,
     transactions: query.data?.transactions ?? [],
     loading: query.isPending,
+    withdrawalFeePercent,
     requestDeposit,
     requestWithdrawal,
     refresh,

@@ -376,22 +376,22 @@ function InstallAppCard() {
         className="flex w-full items-center justify-center gap-2 px-5 py-4 font-display text-sm font-semibold transition hover:bg-navy-800"
       >
         <Download className="h-4.5 w-4.5" aria-hidden="true" />
-        Instalar aplicação
+        {canInstall ? "Instalar aplicação agora" : "Ver como instalar"}
       </button>
       {showHelp && (
         <div className="border-t border-white/10 px-5 py-4 text-xs leading-relaxed text-white/70">
           {isIos ? (
             <>
-              No iPhone: toque em <strong className="text-white">Partilhar</strong> na barra do
-              Safari e depois em{" "}
+              No iPhone/iPad, abra esta página no Safari, toque em{" "}
+              <strong className="text-white">Partilhar</strong> e depois em{" "}
               <strong className="text-white">"Adicionar ao ecrã principal"</strong>.
             </>
           ) : (
             <>
-              Ainda não foi possível instalar automaticamente. Abra o menu do navegador (⋮) e
-              escolha <strong className="text-white">"Instalar aplicativo"</strong> ou{" "}
-              <strong className="text-white">"Adicionar ao ecrã principal"</strong>. Se essa opção
-              não aparecer, atualize a página e tente de novo.
+              No Chrome ou Edge, abra o menu do navegador (⋮) e escolha{" "}
+              <strong className="text-white">"Instalar aplicação"</strong> ou{" "}
+              <strong className="text-white">"Adicionar ao ecrã principal"</strong>. Se a opção
+              não aparecer, atualize a página e abra este menu novamente.
             </>
           )}
         </div>
