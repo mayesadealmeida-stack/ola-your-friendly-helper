@@ -12,6 +12,7 @@ import {
   RefreshCw,
   ShoppingBag,
   WalletCards,
+  X,
 } from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
 import { useTasks, type TaskProduct } from "@/hooks/use-tasks";
@@ -39,16 +40,25 @@ function TasksPage() {
   const [busyProduct, setBusyProduct] = useState<string | null>(null);
   const [busyRedeem, setBusyRedeem] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<TaskProduct | null>(null);
 
   const currentRound = tasks.cycle?.current_round ?? 0;
   const isCompleted = tasks.cycle?.status === "completed";
   const lockedTotal = (tasks.cycle?.locked_amount ?? 0) + (tasks.cycle?.reward_amount ?? 0);
 
-  async function handleBuy(product: TaskProduct) {
+  function handleBuy(product: TaskProduct) {
+    setFeedback(null);
+    setSelectedProduct(product);
+  }
+
+  async function confirmBuy() {
+    if (!selectedProduct) return;
+    const product = selectedProduct;
     setFeedback(null);
     setBusyProduct(product.id);
     const result = await tasks.startTask(product.id);
     setBusyProduct(null);
+    setSelectedProduct(null);
     setFeedback(
       result.error ? translateTaskError(result.error) : `Rodada ${currentRound + 1} concluída.`,
     );
@@ -172,6 +182,16 @@ function TasksPage() {
       </div>
 
       <BottomNav active="tarefas" />
+
+      {selectedProduct && !isCompleted && (
+        <PurchaseTaskModal
+          product={selectedProduct}
+          round={currentRound + 1}
+          busy={busyProduct === selectedProduct.id}
+          onCancel={() => setSelectedProduct(null)}
+          onConfirm={confirmBuy}
+        />
+      )}
     </div>
   );
 }
@@ -338,7 +358,7 @@ function ProductTaskCard({
             ) : (
               <ShoppingBag className="h-3.5 w-3.5" aria-hidden="true" />
             )}
-            {busy ? "A comprar…" : "Comprar tarefa"}
+            {busy ? "A comprar…" : "Comprar"}
           </button>
         )}
       </div>
@@ -385,9 +405,97 @@ function RedeemCard({
         className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-green py-3.5 text-sm font-bold text-navy-900 transition hover:bg-brand-green/85 disabled:opacity-60"
       >
         {busy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
-        {busy ? "A resgatar…" : "Resgatar agora"}
+        {busy ? "A resgatar…" : "Resgatar"}
       </button>
     </section>
+  );
+}
+
+function PurchaseTaskModal({
+  product,
+  round,
+  busy,
+  onCancel,
+  onConfirm,
+}: {
+  product: TaskProduct;
+  round: number;
+  busy: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-navy-900/55 p-4 sm:items-center">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="purchase-task-title"
+        className="w-full max-w-md rounded-3xl bg-card p-5 shadow-2xl"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-brand-green-dark">
+              Rodada {round} de 3
+            </p>
+            <h2 id="purchase-task-title" className="mt-1 font-display text-lg font-bold">
+              Confirmar compra
+            </h2>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            aria-label="Fechar confirmação"
+            className="rounded-full p-2 text-muted-foreground transition hover:bg-secondary"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+
+        <div className="mt-5 flex gap-3 rounded-2xl bg-secondary/60 p-3">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-card text-navy-900">
+            {product.image_url ? (
+              <img
+                src={product.image_url}
+                alt=""
+                className="h-full w-full rounded-xl object-cover"
+              />
+            ) : (
+              <Package className="h-7 w-7" aria-hidden="true" />
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-bold text-card-foreground">{product.name}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{product.description}</p>
+            <p className="mt-2 text-sm font-bold text-navy-900">Kz {fmt(Number(product.price))}</p>
+          </div>
+        </div>
+
+        <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+          O valor será bloqueado até completares as três rodadas. Ao terminar, poderás clicar em
+          <strong className="text-card-foreground"> Resgatar</strong> para voltar a receber o valor
+          com o lucro previsto.
+        </p>
+
+        <div className="mt-5 flex gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 rounded-xl bg-secondary py-3 text-xs font-semibold text-muted-foreground"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={busy}
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand-green py-3 text-xs font-bold text-navy-900 disabled:opacity-60"
+          >
+            {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
+            {busy ? "A comprar…" : "Comprar rodada"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

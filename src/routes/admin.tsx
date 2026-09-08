@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -88,6 +88,8 @@ const ADMIN_ACTIONS: {
   { key: "seguranca", label: "Segurança", description: "Trocar palavra-passe", icon: KeyRound },
 ];
 
+const ADMIN_ACCESS_STORAGE_KEY = "group-mobil-admin-access";
+
 function methodLabel(method: string | null): string {
   if (!method) return "—";
   return PAYMENT_METHOD_INFO[method as PaymentMethodKey]?.label ?? method;
@@ -101,7 +103,17 @@ function AdminPage() {
   // Exige sempre o login próprio do admin nesta página — mesmo que o
   // navegador já tenha uma sessão normal de utilizador aberta, essa sessão
   // nunca é usada para dar acesso automático ao painel.
-  const [adminAuthAttempted, setAdminAuthAttempted] = useState(false);
+  const [adminAuthAttempted, setAdminAuthAttempted] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(ADMIN_ACCESS_STORAGE_KEY) === "true";
+  });
+
+  useEffect(() => {
+    if (isAdmin && userId) {
+      setAdminAuthAttempted(true);
+      window.localStorage.setItem(ADMIN_ACCESS_STORAGE_KEY, "true");
+    }
+  }, [isAdmin, userId]);
 
   if (roleLoading) {
     return (
@@ -112,7 +124,14 @@ function AdminPage() {
   }
 
   if (!adminAuthAttempted || !userId) {
-    return <AdminLoginForm onAuthenticated={() => setAdminAuthAttempted(true)} />;
+    return (
+      <AdminLoginForm
+        onAuthenticated={() => {
+          window.localStorage.setItem(ADMIN_ACCESS_STORAGE_KEY, "true");
+          setAdminAuthAttempted(true);
+        }}
+      />
+    );
   }
 
   if (!isAdmin) {
