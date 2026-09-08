@@ -337,6 +337,42 @@ export type Database = {
         }
         Relationships: []
       }
+      investment_plans: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string
+          entry_price: number
+          estimated_return: number
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string
+          entry_price: number
+          estimated_return: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string
+          entry_price?: number
+          estimated_return?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
       kyc_basic: {
         Row: {
           address: string
