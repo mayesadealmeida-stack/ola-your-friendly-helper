@@ -10,13 +10,8 @@ import {
   Users,
   BadgeCheck,
   HelpCircle,
-  CheckCircle2,
-  ThumbsUp,
-  MessageCircle,
-  Share2,
   ShieldCheck,
   HandCoins,
-
   type LucideIcon,
 } from "lucide-react";
 import { BottomNav } from "@/components/bottom-nav";
@@ -25,7 +20,6 @@ import { useProfile } from "@/hooks/use-profile";
 import { useWallet } from "@/hooks/use-wallet";
 import { useKyc } from "@/hooks/use-kyc";
 import { useNotifications } from "@/hooks/use-notifications";
-import { usePosts, relativeTime, type Post, type PostCategory } from "@/hooks/use-posts";
 import logoMark from "/logo-group-mobil-mark.webp";
 
 export const Route = createFileRoute("/home")({
@@ -56,8 +50,6 @@ function useRecentMovements() {
   return { movements: [] as Movement[], loading: false };
 }
 
-type FeedFilter = "todos" | PostCategory;
-
 // ---------------------------------------------------------------------------
 
 function HomePage() {
@@ -66,18 +58,11 @@ function HomePage() {
   const wallet = useWallet();
   const notifications = useNotifications();
   const recent = useRecentMovements();
-  const feed = usePosts();
-  const [activeCategory, setActiveCategory] = useState<FeedFilter>("todos");
 
   // Saldo de depósito = pedidos de depósito ainda por confirmar.
   const pendingDepositKz = wallet.transactions
     .filter((t) => t.status === "pendente" && t.type === "deposito")
     .reduce((sum, t) => sum + Number(t.amount), 0);
-
-  const filteredPosts =
-    activeCategory === "todos"
-      ? feed.posts
-      : feed.posts.filter((p) => p.category === activeCategory);
 
   return (
     <div className="min-h-screen bg-secondary/40 pb-28">
@@ -100,12 +85,6 @@ function HomePage() {
           <PromoBanner />
 
           <RecentMovements movements={recent.movements} />
-
-          <FeedSection
-            posts={filteredPosts}
-            activeCategory={activeCategory}
-            onCategoryChange={setActiveCategory}
-          />
         </main>
       </div>
 
@@ -209,7 +188,6 @@ function RechargeWithdrawButtons() {
     </section>
   );
 }
-
 
 function WalletCard({
   depositKz,
@@ -400,122 +378,5 @@ function RecentMovements({ movements }: { movements: Movement[] }) {
         Ver histórico →
       </button>
     </section>
-  );
-}
-
-const CATEGORY_TABS: { key: FeedFilter; label: string }[] = [
-  { key: "todos", label: "Novidades" },
-  { key: "evento", label: "Eventos" },
-  { key: "noticia", label: "Notícias" },
-];
-
-function FeedSection({
-  posts,
-  activeCategory,
-  onCategoryChange,
-}: {
-  posts: Post[];
-  activeCategory: FeedFilter;
-  onCategoryChange: (category: FeedFilter) => void;
-}) {
-  return (
-    <section>
-      <div className="mb-4 flex items-center gap-5 border-b border-border">
-        {CATEGORY_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => onCategoryChange(tab.key)}
-            className={`relative pb-3 font-display text-sm font-semibold transition ${
-              activeCategory === tab.key ? "text-foreground" : "text-muted-foreground"
-            }`}
-          >
-            {tab.label}
-            {activeCategory === tab.key && (
-              <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-brand-green" />
-            )}
-          </button>
-        ))}
-      </div>
-
-      {posts.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-card px-5 py-8 text-center">
-          <p className="text-sm text-muted-foreground">Ainda não há publicações para mostrar.</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {posts.map((post) => (
-            <PostCard key={post.id} post={post} />
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-function PostCard({ post }: { post: Post }) {
-  return (
-    <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-      <div className="flex items-center gap-3 px-4 pt-4">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-navy-900 font-display text-xs font-bold text-white">
-          {post.author_avatar_url ? (
-            <img
-              src={post.author_avatar_url}
-              alt=""
-              aria-hidden="true"
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            post.author_name.charAt(0).toUpperCase()
-          )}
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="flex items-center gap-1 truncate text-sm font-semibold text-card-foreground">
-            {post.author_name}
-            <CheckCircle2
-              className="h-3.5 w-3.5 shrink-0 text-brand-green"
-              strokeWidth={2.25}
-              aria-hidden="true"
-            />
-          </p>
-          <p className="text-xs text-muted-foreground">{relativeTime(post.created_at)}</p>
-        </div>
-      </div>
-
-      <div className="px-4 pb-1 pt-3">
-        <p className="font-display text-sm font-semibold leading-snug text-card-foreground">
-          {post.title}
-        </p>
-        {post.body && (
-          <p className="mt-1.5 line-clamp-4 text-sm leading-relaxed text-muted-foreground">
-            {post.body}
-          </p>
-        )}
-      </div>
-
-      {post.image_url && (
-        <img
-          src={post.image_url}
-          alt=""
-          className="mt-3 aspect-video w-full object-cover"
-          loading="lazy"
-        />
-      )}
-
-      <div className="flex items-center gap-5 px-4 py-3 text-muted-foreground">
-        <span className="flex items-center gap-1.5 text-xs font-medium">
-          <ThumbsUp className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-          {post.likes_count}
-        </span>
-        <span className="flex items-center gap-1.5 text-xs font-medium">
-          <MessageCircle className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-          {post.comments_count}
-        </span>
-        <span className="flex items-center gap-1.5 text-xs font-medium">
-          <Share2 className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-          {post.shares_count}
-        </span>
-      </div>
-    </article>
   );
 }
