@@ -1,16 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import {
-  ArrowLeft,
-  Loader2,
-  Copy,
-  Check,
-  Paperclip,
-  CheckCircle2,
-  X,
-  Hash,
-  Receipt,
-} from "lucide-react";
+import { ArrowLeft, Loader2, Copy, Check, Paperclip, CheckCircle2, X, Hash } from "lucide-react";
 import { useProfile } from "@/hooks/use-profile";
 import { useWallet } from "@/hooks/use-wallet";
 
@@ -27,7 +17,7 @@ export const Route = createFileRoute("/perfil/depositar")({
 // aqui é paga num ATM/Multicaixa Express — é preciso ter mesmo o registo de
 // comerciante feito junto da EMIS primeiro.
 // -----------------------------------------------------------------------------
-const MERCHANT_ENTITY_ID = "";
+const MERCHANT_ENTITY_ID = "10116";
 
 const QUICK_AMOUNTS = [6000, 15000, 30000, 50000, 100000, 250000];
 
@@ -316,8 +306,12 @@ function ReferenceCard({
   return (
     <div className="rounded-2xl bg-card p-5 shadow-sm">
       <div className="flex items-center gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-green/15 text-brand-green-dark">
-          <Receipt className="h-5 w-5" strokeWidth={2} aria-hidden="true" />
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-secondary p-1.5">
+          <img
+            src="/multicaixa-logo.webp"
+            alt="Multicaixa Express"
+            className="h-full w-full object-contain"
+          />
         </span>
         <div>
           <p className="font-display text-sm font-bold text-navy-900">Pagamento por referência</p>
