@@ -68,6 +68,10 @@ function AdminPage() {
   const { isAdmin, loading: roleLoading, userId } = useIsAdmin();
   const finance = useAdminFinance(isAdmin);
   const [tab, setTab] = useState<TabKey>("resumo");
+  // Exige sempre o login próprio do admin nesta página — mesmo que o
+  // navegador já tenha uma sessão normal de utilizador aberta, essa sessão
+  // nunca é usada para dar acesso automático ao painel.
+  const [adminAuthAttempted, setAdminAuthAttempted] = useState(false);
 
   if (roleLoading) {
     return (
@@ -77,8 +81,8 @@ function AdminPage() {
     );
   }
 
-  if (!userId) {
-    return <AdminLoginForm />;
+  if (!adminAuthAttempted || !userId) {
+    return <AdminLoginForm onAuthenticated={() => setAdminAuthAttempted(true)} />;
   }
 
   if (!isAdmin) {
@@ -828,7 +832,7 @@ function AdminInvoiceSheet({
   );
 }
 
-function AdminLoginForm() {
+function AdminLoginForm({ onAuthenticated }: { onAuthenticated: () => void }) {
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -861,6 +865,7 @@ function AdminLoginForm() {
 
     // A sessão está válida — força o AdminPage a reavaliar se a conta é admin.
     await queryClient.invalidateQueries({ queryKey: ["is-admin"] });
+    onAuthenticated();
   }
 
   return (
