@@ -82,11 +82,16 @@ export function useProfile() {
         return { error: "Falha ao enviar a imagem. Tente novamente." };
       }
 
-      const { data: publicUrlData } = supabase.storage.from("avatars").getPublicUrl(path);
-      // Cache-buster para a imagem atualizar de imediato em todos os ecrãs.
-      const url = `${publicUrlData.publicUrl}?v=${Date.now()}`;
+      // O bucket é privado: gera um link assinado de longa duração (1 ano).
+      const { data: signed, error: signedError } = await supabase.storage
+        .from("avatars")
+        .createSignedUrl(path, 60 * 60 * 24 * 365);
 
-      return updateProfile({ avatar_url: url });
+      if (signedError || !signed?.signedUrl) {
+        return { error: "Falha ao preparar a imagem. Tente novamente." };
+      }
+
+      return updateProfile({ avatar_url: signed.signedUrl });
     },
     [userId, updateProfile],
   );
