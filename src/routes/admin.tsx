@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   Loader2,
   Lock,
+  Newspaper,
   PlusCircle,
   RefreshCw,
   ShieldCheck,
@@ -28,6 +29,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getAdminLoginEmail, validatePassword } from "@/lib/phone";
 import { useAdminFinance, useIsAdmin, type WalletTx } from "@/hooks/use-admin";
+import { useAdminPosts, type AdminPost, type NewAdminPost } from "@/hooks/use-admin-posts";
 import { usePlans, type InvestmentPlan } from "@/hooks/use-plans";
 import { PAYMENT_METHOD_INFO, type PaymentMethodKey } from "@/hooks/use-payment-methods";
 import { formatKz, formatDate } from "@/lib/groups";
@@ -54,7 +56,15 @@ export const Route = createFileRoute("/admin")({
 });
 
 type TabKey =
-  "resumo" | "pagamentos" | "saques" | "usuarios" | "faturas" | "planos" | "tarefas" | "seguranca";
+  | "resumo"
+  | "pagamentos"
+  | "saques"
+  | "usuarios"
+  | "faturas"
+  | "planos"
+  | "noticias"
+  | "tarefas"
+  | "seguranca";
 
 const ADMIN_ACTIONS: {
   key: TabKey;
@@ -73,6 +83,7 @@ const ADMIN_ACTIONS: {
   { key: "usuarios", label: "Usuários", description: "Contas e saldos", icon: Users },
   { key: "faturas", label: "Faturas", description: "Comprovativos", icon: FileText },
   { key: "planos", label: "Planos", description: "Gerir investimentos", icon: TrendingUp },
+  { key: "noticias", label: "Notícias", description: "Publicar novidades", icon: Newspaper },
   { key: "tarefas", label: "Tarefas", description: "Rodadas e pagamentos", icon: ClipboardCheck },
   { key: "seguranca", label: "Segurança", description: "Trocar palavra-passe", icon: KeyRound },
 ];
@@ -85,6 +96,7 @@ function methodLabel(method: string | null): string {
 function AdminPage() {
   const { isAdmin, loading: roleLoading, userId } = useIsAdmin();
   const finance = useAdminFinance(isAdmin);
+  const posts = useAdminPosts(isAdmin);
   const [tab, setTab] = useState<TabKey>("resumo");
   // Exige sempre o login próprio do admin nesta página — mesmo que o
   // navegador já tenha uma sessão normal de utilizador aberta, essa sessão
@@ -214,6 +226,7 @@ function AdminPage() {
               {tab === "usuarios" && <UsuariosTab finance={finance} />}
               {tab === "faturas" && <FaturasTab finance={finance} />}
               {tab === "planos" && <PlanosTab />}
+              {tab === "noticias" && <NoticiasTab posts={posts} />}
               {tab === "tarefas" && <TarefasTab finance={finance} />}
               {tab === "seguranca" && <SegurancaTab />}
             </>
@@ -1169,6 +1182,244 @@ function AdminPlanRow({ plan }: { plan: InvestmentPlan }) {
       <span className="rounded-full bg-brand-green/15 px-2 py-1 text-[10px] font-semibold text-brand-green-dark">
         No Mercado
       </span>
+    </article>
+  );
+}
+
+type AdminPosts = ReturnType<typeof useAdminPosts>;
+
+function NoticiasTab({ posts }: { posts: AdminPosts }) {
+  const [showForm, setShowForm] = useState(false);
+
+  return (
+    <div className="space-y-4">
+      <section className="rounded-2xl bg-card p-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-green/15 text-brand-green-dark">
+            <Newspaper className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-display text-sm font-semibold text-card-foreground">
+              Notícias e publicações
+            </h2>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              Publique comunicados oficiais para aparecerem no feed da Group Mobil.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowForm((open) => !open)}
+            className="flex shrink-0 items-center gap-1 rounded-xl bg-brand-green px-3 py-2 text-xs font-semibold text-primary-foreground transition hover:bg-brand-green-dark"
+          >
+            <PlusCircle className="h-3.5 w-3.5" aria-hidden="true" />
+            {showForm ? "Fechar" : "Publicar"}
+          </button>
+        </div>
+      </section>
+
+      {showForm && <NewsForm onCancel={() => setShowForm(false)} onSubmit={posts.createPost} />}
+
+      {posts.error && (
+        <p className="rounded-2xl bg-destructive/10 p-4 text-xs font-medium text-destructive">
+          Não foi possível carregar as notícias: {posts.error}
+        </p>
+      )}
+
+      {posts.loading ? (
+        <div className="flex justify-center py-10">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" aria-hidden="true" />
+        </div>
+      ) : posts.posts.length === 0 ? (
+        <Empty text="Ainda não há notícias. Use “Publicar” para criar a primeira." />
+      ) : (
+        <Section title={`Publicações (${posts.posts.length})`}>
+          {posts.posts.map((post) => (
+            <AdminPostRow key={post.id} post={post} />
+          ))}
+        </Section>
+      )}
+    </div>
+  );
+}
+
+function NewsForm({
+  onCancel,
+  onSubmit,
+}: {
+  onCancel: () => void;
+  onSubmit: (values: NewAdminPost) => Promise<{ error: string | null }>;
+}) {
+  const [category, setCategory] = useState("noticia");
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [image, setImage] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+
+    if (!title.trim()) return setError("Digite o assunto da notícia.");
+    if (!body.trim()) return setError("Escreva o conteúdo da notícia.");
+
+    setBusy(true);
+    const result = await onSubmit({
+      category,
+      title: title.trim(),
+      body: body.trim(),
+      image,
+    });
+    setBusy(false);
+
+    if (result.error) {
+      setError(result.error);
+    } else {
+      onCancel();
+    }
+  }
+
+  function selectImage(file: File | undefined) {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Escolha uma imagem válida.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("A imagem deve ter no máximo 5 MB.");
+      return;
+    }
+    setError(null);
+    setImage(file);
+    setPreview(URL.createObjectURL(file));
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3 rounded-2xl bg-card p-4 shadow-sm">
+      <div>
+        <p className="font-display text-sm font-semibold text-card-foreground">Nova publicação</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          A publicação será assinada pela Group Mobil e ficará disponível no feed.
+        </p>
+      </div>
+
+      <label className="block">
+        <span className="mb-1.5 block text-xs font-medium text-muted-foreground">Tema</span>
+        <select
+          value={category}
+          onChange={(event) => setCategory(event.target.value)}
+          className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm outline-none focus:border-brand-green"
+        >
+          <option value="noticia">Notícia</option>
+          <option value="novidade">Novidade</option>
+          <option value="evento">Evento</option>
+        </select>
+      </label>
+
+      <label className="block">
+        <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
+          Assunto / título
+        </span>
+        <input
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          placeholder="Ex.: Novo calendário de pagamentos"
+          className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm outline-none focus:border-brand-green"
+          required
+        />
+      </label>
+
+      <label className="block">
+        <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
+          Conteúdo da publicação
+        </span>
+        <textarea
+          value={body}
+          onChange={(event) => setBody(event.target.value)}
+          placeholder="Escreva os detalhes que os participantes precisam saber."
+          rows={5}
+          className="w-full resize-none rounded-xl border border-input bg-background px-3 py-2.5 text-sm outline-none focus:border-brand-green"
+          required
+        />
+      </label>
+
+      <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-border bg-secondary/50 p-3 transition hover:border-brand-green">
+        {preview ? (
+          <img
+            src={preview}
+            alt="Pré-visualização da notícia"
+            className="h-14 w-14 rounded-lg object-cover"
+          />
+        ) : (
+          <span className="flex h-14 w-14 items-center justify-center rounded-lg bg-card text-muted-foreground">
+            <ImagePlus className="h-5 w-5" aria-hidden="true" />
+          </span>
+        )}
+        <span className="min-w-0">
+          <span className="block text-xs font-semibold text-card-foreground">
+            Imagem da notícia
+          </span>
+          <span className="mt-0.5 block text-[11px] text-muted-foreground">
+            Opcional · JPG ou PNG, até 5 MB
+          </span>
+        </span>
+        <input
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          onChange={(event) => selectImage(event.target.files?.[0])}
+        />
+      </label>
+
+      {error && <p className="text-xs font-medium text-destructive">{error}</p>}
+
+      <div className="flex gap-2 pt-1">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex-1 rounded-xl bg-secondary py-3 text-xs font-semibold text-muted-foreground"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          disabled={busy}
+          className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand-green py-3 text-xs font-semibold text-primary-foreground disabled:opacity-60"
+        >
+          {busy && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
+          {busy ? "A publicar…" : "Publicar notícia"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function AdminPostRow({ post }: { post: AdminPost }) {
+  const categoryLabel =
+    post.category === "evento" ? "Evento" : post.category === "novidade" ? "Novidade" : "Notícia";
+
+  return (
+    <article className="flex items-start gap-3 rounded-2xl bg-card p-3 shadow-sm">
+      {post.image_url ? (
+        <img src={post.image_url} alt="" className="h-16 w-16 shrink-0 rounded-xl object-cover" />
+      ) : (
+        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-secondary text-navy-900">
+          <Newspaper className="h-5 w-5" aria-hidden="true" />
+        </span>
+      )}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="truncate text-sm font-semibold text-card-foreground">{post.title}</p>
+          <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+            {categoryLabel}
+          </span>
+        </div>
+        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+          {post.body || "Sem conteúdo adicional."}
+        </p>
+        <p className="mt-1.5 text-[11px] text-muted-foreground">{formatDate(post.created_at)}</p>
+      </div>
     </article>
   );
 }

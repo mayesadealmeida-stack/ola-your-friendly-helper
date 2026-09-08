@@ -319,8 +319,8 @@ function AboutSupportCard() {
         <div>
           <p className="text-sm font-medium text-card-foreground">Sobre a Group Mobil</p>
           <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-            A Group Mobil é uma plataforma angolana para organizar grupos, contribuições e
-            pagamentos de forma simples e transparente.
+            Somos uma empresa angolana de investimentos sociais, dedicada a criar oportunidades de
+            crescimento através de grupos, contribuições e pagamentos simples e transparentes.
           </p>
         </div>
       </div>
