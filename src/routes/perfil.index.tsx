@@ -7,8 +7,10 @@ import {
   Copy,
   Download,
   HelpCircle,
+  Info,
   Loader2,
   LogOut,
+  MessageCircle,
   Settings,
   ShieldCheck,
   TrendingUp,
@@ -251,6 +253,8 @@ function PerfilPage() {
 
           <InstallAppCard />
 
+          <AboutSupportCard />
+
           <button
             type="button"
             onClick={handleLogout}
@@ -287,6 +291,35 @@ function kycBadge(status: string | undefined): MenuBadge {
     default:
       return { text: kycStatusLabel("not_started"), tone: "muted" };
   }
+}
+
+function AboutSupportCard() {
+  return (
+    <section className="overflow-hidden rounded-2xl border border-border bg-card">
+      <div className="flex items-start gap-3 px-5 py-4">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-navy-900">
+          <Info className="h-4.5 w-4.5" aria-hidden="true" />
+        </span>
+        <div>
+          <p className="text-sm font-medium text-card-foreground">Sobre a Group Mobil</p>
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+            A Group Mobil é uma plataforma angolana para organizar grupos, contribuições e
+            pagamentos de forma simples e transparente.
+          </p>
+        </div>
+      </div>
+
+      <Link
+        to="/assistente"
+        className="flex items-center gap-3 border-t border-border px-5 py-4 transition hover:bg-accent"
+      >
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-green/15 text-brand-green-dark">
+          <MessageCircle className="h-4.5 w-4.5" aria-hidden="true" />
+        </span>
+        <span className="flex-1 text-sm font-medium text-card-foreground">Falar com o suporte</span>
+      </Link>
+    </section>
+  );
 }
 
 function InstallAppCard() {
