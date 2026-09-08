@@ -3,27 +3,7 @@ import { useState } from "react";
 import { Phone, Lock, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { setRememberMe as persistRememberMe } from "@/integrations/supabase/remember-me";
-
-function normalizePhone(input: string): string {
-  const digits = input.replace(/\D/g, "");
-  const local = digits.startsWith("244") ? digits.slice(3) : digits.replace(/^0+/, "");
-  return `244${local}`;
-}
-
-// O telefone é convertido num endereço interno estável para a autenticação.
-function phoneToEmail(phone: string): string {
-  return `${normalizePhone(phone)}@groupmobil.app`;
-}
-
-function validate(phone: string, password: string): string | null {
-  const digits = normalizePhone(phone);
-  if (digits.length < 11) return "Número de telefone inválido. Ex.: 900 000 000";
-  if (!/^[A-Za-z0-9]+$/.test(password)) return "A senha deve conter apenas letras e números.";
-  if (password.length < 6) return "A senha deve ter pelo menos 6 caracteres.";
-  if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password))
-    return "A senha deve conter letras e números.";
-  return null;
-}
+import { normalizePhone, phoneToEmail, validatePhonePassword } from "@/lib/phone";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -64,7 +44,7 @@ function Index() {
     const rawPhone = String(form.get("phone") ?? "").trim();
     const password = String(form.get("password") ?? "");
 
-    const invalid = validate(rawPhone, password);
+    const invalid = validatePhonePassword(rawPhone, password);
     if (invalid) {
       setError(invalid);
       return;
@@ -113,7 +93,7 @@ function Index() {
     const rawPhone = String(form.get("phone") ?? "").trim();
     const password = String(form.get("password") ?? "");
 
-    const invalid = validate(rawPhone, password);
+    const invalid = validatePhonePassword(rawPhone, password);
     if (invalid) {
       setError(invalid);
       return;

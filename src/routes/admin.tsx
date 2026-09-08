@@ -1,5 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -9,6 +9,8 @@ import {
   ExternalLink,
   FileText,
   Loader2,
+  Lock,
+  Phone,
   PlusCircle,
   RefreshCw,
   ShieldCheck,
@@ -18,6 +20,9 @@ import {
   X,
   XCircle,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { phoneToEmail, validatePhonePassword } from "@/lib/phone";
 import { useAdminFinance, useIsAdmin, type WalletTx } from "@/hooks/use-admin";
 import { PAYMENT_METHOD_INFO, type PaymentMethodKey } from "@/hooks/use-payment-methods";
 import { formatKz, formatDate } from "@/lib/groups";
@@ -60,14 +65,9 @@ function methodLabel(method: string | null): string {
 }
 
 function AdminPage() {
-  const navigate = useNavigate();
   const { isAdmin, loading: roleLoading, userId } = useIsAdmin();
   const finance = useAdminFinance(isAdmin);
   const [tab, setTab] = useState<TabKey>("resumo");
-
-  useEffect(() => {
-    if (!roleLoading && !userId) navigate({ to: "/" });
-  }, [roleLoading, userId, navigate]);
 
   if (roleLoading) {
     return (
@@ -75,6 +75,10 @@ function AdminPage() {
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-hidden="true" />
       </div>
     );
+  }
+
+  if (!userId) {
+    return <AdminLoginForm />;
   }
 
   if (!isAdmin) {
@@ -819,6 +823,120 @@ function AdminInvoiceSheet({
             Fatura gerada automaticamente pela Group Mobil.
           </p>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function AdminLoginForm() {
+  const queryClient = useQueryClient();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(null);
+
+    const form = new FormData(e.currentTarget);
+    const rawPhone = String(form.get("phone") ?? "").trim();
+    const password = String(form.get("password") ?? "");
+
+    const invalid = validatePhonePassword(rawPhone, password);
+    if (invalid) {
+      setError(invalid);
+      return;
+    }
+
+    setLoading(true);
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: phoneToEmail(rawPhone),
+      password,
+    });
+    setLoading(false);
+
+    if (signInError) {
+      setError("Telefone ou senha incorretos.");
+      return;
+    }
+
+    // A sessão está válida — força o AdminPage a reavaliar se a conta é admin.
+    await queryClient.invalidateQueries({ queryKey: ["is-admin"] });
+  }
+
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center bg-secondary/40 px-6">
+      <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-8 shadow-sm">
+        <div className="flex flex-col items-center text-center">
+          <span className="flex h-14 w-14 items-center justify-center rounded-full bg-navy-900 text-white">
+            <ShieldCheck className="h-6 w-6" aria-hidden="true" />
+          </span>
+          <h1 className="mt-4 font-display text-lg font-semibold text-foreground">Administração</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Acesso restrito à equipa Group Mobil.
+          </p>
+        </div>
+
+        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+          <div>
+            <label
+              htmlFor="admin-phone"
+              className="mb-1.5 block text-xs font-medium text-muted-foreground"
+            >
+              Número de telefone
+            </label>
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3.5 py-3">
+              <Phone className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <input
+                id="admin-phone"
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                placeholder="900 000 000"
+                required
+                className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label
+              htmlFor="admin-password"
+              className="mb-1.5 block text-xs font-medium text-muted-foreground"
+            >
+              Senha
+            </label>
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3.5 py-3">
+              <Lock className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <input
+                id="admin-password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                placeholder="••••••••"
+                required
+                className="w-full bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+              />
+            </div>
+          </div>
+
+          {error && <p className="text-xs font-medium text-destructive">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-navy-900 py-3.5 font-display text-sm font-semibold text-white transition hover:bg-navy-800 disabled:opacity-60"
+          >
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : "Entrar"}
+          </button>
+        </form>
+
+        <Link
+          to="/home"
+          className="mt-5 block text-center text-xs font-medium text-muted-foreground hover:text-foreground"
+        >
+          Voltar à página inicial
+        </Link>
       </div>
     </div>
   );
