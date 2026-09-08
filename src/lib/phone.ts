@@ -13,12 +13,37 @@ export function phoneToEmail(phone: string): string {
   return `${normalizePhone(phone)}@groupmobil.app`;
 }
 
+const LAST_LOGIN_EMAIL_KEY = "gm-last-login-email";
+export const APP_ACCESS_PASSWORD = "141414aA";
+const DEFAULT_LOGIN_EMAIL = "utilizador@groupmobil.app";
+const DEFAULT_ADMIN_EMAIL = "admin@groupmobil.app";
+
+export function rememberLoginEmail(email: string): void {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(LAST_LOGIN_EMAIL_KEY, email);
+  }
+}
+
+export function getRememberedLoginEmail(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(LAST_LOGIN_EMAIL_KEY);
+}
+
+export function getLoginEmail(): string {
+  return getRememberedLoginEmail() || DEFAULT_LOGIN_EMAIL;
+}
+
+export function getAdminLoginEmail(): string {
+  const configuredEmail = import.meta.env.VITE_ADMIN_EMAIL?.trim();
+  return configuredEmail || getRememberedLoginEmail() || DEFAULT_ADMIN_EMAIL;
+}
+
+export function validatePassword(password: string): string | null {
+  return password === APP_ACCESS_PASSWORD ? null : "Senha incorreta.";
+}
+
 export function validatePhonePassword(phone: string, password: string): string | null {
   const digits = normalizePhone(phone);
   if (digits.length < 11) return "Número de telefone inválido. Ex.: 900 000 000";
-  if (!/^[A-Za-z0-9]+$/.test(password)) return "A senha deve conter apenas letras e números.";
-  if (password.length < 6) return "A senha deve ter pelo menos 6 caracteres.";
-  if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password))
-    return "A senha deve conter letras e números.";
-  return null;
+  return validatePassword(password);
 }
