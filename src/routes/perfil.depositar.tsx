@@ -1,15 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import {
-  ArrowLeft,
-  Loader2,
-  Copy,
-  Check,
-  Paperclip,
-  CheckCircle2,
-  X,
-  Landmark,
-} from "lucide-react";
+import { ArrowLeft, Loader2, Copy, Check, Paperclip, CheckCircle2, X, Hash } from "lucide-react";
 import { useProfile } from "@/hooks/use-profile";
 import { useWallet } from "@/hooks/use-wallet";
 
@@ -21,12 +12,20 @@ export const Route = createFileRoute("/perfil/depositar")({
 });
 
 // -----------------------------------------------------------------------------
-// PREENCHER com as contas bancárias reais da Group Mobil antes de publicar.
-// Cada entrada: { bank: "Nome do banco", holder: "Titular", iban: "IBAN" }
+// PREENCHER com o Entity ID real da Group Mobil junto da EMIS/Multicaixa
+// Express antes de publicar. Sem isto registado, nenhuma referência gerada
+// aqui é paga num ATM/Multicaixa Express — é preciso ter mesmo o registo de
+// comerciante feito junto da EMIS primeiro.
 // -----------------------------------------------------------------------------
-const BANK_ACCOUNTS: { bank: string; holder: string; iban: string }[] = [];
+const MERCHANT_ENTITY_ID = "";
 
 const QUICK_AMOUNTS = [6000, 15000, 30000, 50000, 100000, 250000];
+
+function generateReference(): string {
+  const digits =
+    String(Date.now()).slice(-6) + String(Math.floor(Math.random() * 1000)).padStart(3, "0");
+  return digits.replace(/(\d{3})(?=\d)/g, "$1 ").trim();
+}
 
 type Phase = "valor" | "dados" | "comprovativo" | "enviado";
 
@@ -37,6 +36,7 @@ function DepositarPage() {
 
   const [phase, setPhase] = useState<Phase>("valor");
   const [amount, setAmount] = useState("");
+  const [reference, setReference] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -97,7 +97,13 @@ function DepositarPage() {
             />
           )}
 
-          {phase === "dados" && <DadosBancariosStep onDone={() => setPhase("comprovativo")} />}
+          {phase === "dados" && (
+            <DadosReferenciaStep
+              amountValue={amountValue}
+              reference={reference}
+              onDone={() => setPhase("comprovativo")}
+            />
+          )}
 
           {phase === "comprovativo" && (
             <ComprovativoStep
@@ -120,6 +126,7 @@ function DepositarPage() {
           amountValue={amountValue}
           onCancel={() => setShowConfirm(false)}
           onConfirm={() => {
+            setReference(generateReference());
             setShowConfirm(false);
             setPhase("dados");
           }}
@@ -236,23 +243,36 @@ function ConfirmDialog({
   );
 }
 
-function DadosBancariosStep({ onDone }: { onDone: () => void }) {
+function DadosReferenciaStep({
+  amountValue,
+  reference,
+  onDone,
+}: {
+  amountValue: number;
+  reference: string;
+  onDone: () => void;
+}) {
   return (
     <>
       <p className="mt-4 text-sm text-muted-foreground">
-        Deposite o valor numa das contas abaixo e depois anexe o comprovativo.
+        Pague na app Multicaixa Express ou num ATM, usando os dados abaixo, e depois anexe o
+        comprovativo.
       </p>
 
       <div className="mt-4 space-y-4">
-        {BANK_ACCOUNTS.length === 0 ? (
+        {!MERCHANT_ENTITY_ID ? (
           <div className="rounded-2xl border border-dashed border-border bg-card p-6 text-center">
-            <Landmark className="mx-auto h-5 w-5 text-muted-foreground" aria-hidden="true" />
+            <Hash className="mx-auto h-5 w-5 text-muted-foreground" aria-hidden="true" />
             <p className="mt-2 text-sm text-muted-foreground">
-              As contas bancárias para depósito serão apresentadas aqui em breve.
+              O pagamento por referência será apresentado aqui em breve.
             </p>
           </div>
         ) : (
-          BANK_ACCOUNTS.map((account) => <BankAccountCard key={account.iban} account={account} />)
+          <ReferenceCard
+            entityId={MERCHANT_ENTITY_ID}
+            reference={reference}
+            amountValue={amountValue}
+          />
         )}
       </div>
 
@@ -260,38 +280,68 @@ function DadosBancariosStep({ onDone }: { onDone: () => void }) {
         onClick={onDone}
         className="mt-6 w-full rounded-2xl bg-navy-900 py-4 text-center text-sm font-bold text-white transition hover:opacity-90"
       >
-        Concluído
+        Já paguei
       </button>
     </>
   );
 }
 
-function BankAccountCard({ account }: { account: { bank: string; holder: string; iban: string } }) {
-  const [copied, setCopied] = useState(false);
+function ReferenceCard({
+  entityId,
+  reference,
+  amountValue,
+}: {
+  entityId: string;
+  reference: string;
+  amountValue: number;
+}) {
+  const [copiedField, setCopiedField] = useState<"entity" | "reference" | null>(null);
 
-  async function handleCopy() {
-    await navigator.clipboard.writeText(account.iban);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  async function handleCopy(field: "entity" | "reference", value: string) {
+    await navigator.clipboard.writeText(value.replace(/\s/g, ""));
+    setCopiedField(field);
+    setTimeout(() => setCopiedField(null), 2000);
   }
 
   return (
     <div className="rounded-2xl bg-card p-5 shadow-sm">
-      <p className="font-display text-sm font-bold text-navy-900">{account.bank}</p>
+      <p className="font-display text-sm font-bold text-navy-900">Pagamento por referência</p>
       <p className="mt-1 text-sm text-muted-foreground">
-        Titular: <span className="font-medium text-card-foreground">{account.holder}</span>
+        Valor:{" "}
+        <span className="font-medium text-card-foreground">
+          Kz {new Intl.NumberFormat("pt-AO").format(amountValue)}
+        </span>
       </p>
+
       <div className="mt-3 flex items-center justify-between rounded-xl bg-secondary px-4 py-3">
         <div>
-          <p className="text-[11px] text-muted-foreground">IBAN</p>
-          <p className="text-sm font-medium text-card-foreground">{account.iban}</p>
+          <p className="text-[11px] text-muted-foreground">Entidade</p>
+          <p className="text-sm font-medium text-card-foreground">{entityId}</p>
         </div>
         <button
-          onClick={handleCopy}
-          aria-label="Copiar IBAN"
+          onClick={() => handleCopy("entity", entityId)}
+          aria-label="Copiar entidade"
           className="flex h-9 w-9 items-center justify-center rounded-full bg-navy-900 text-white transition hover:opacity-90"
         >
-          {copied ? (
+          {copiedField === "entity" ? (
+            <Check className="h-4 w-4" aria-hidden="true" />
+          ) : (
+            <Copy className="h-4 w-4" aria-hidden="true" />
+          )}
+        </button>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between rounded-xl bg-secondary px-4 py-3">
+        <div>
+          <p className="text-[11px] text-muted-foreground">Referência</p>
+          <p className="text-sm font-medium text-card-foreground">{reference}</p>
+        </div>
+        <button
+          onClick={() => handleCopy("reference", reference)}
+          aria-label="Copiar referência"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-navy-900 text-white transition hover:opacity-90"
+        >
+          {copiedField === "reference" ? (
             <Check className="h-4 w-4" aria-hidden="true" />
           ) : (
             <Copy className="h-4 w-4" aria-hidden="true" />
