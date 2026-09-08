@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Download, X } from "lucide-react";
+import { useRouterState } from "@tanstack/react-router";
 import { useInstallPrompt } from "@/hooks/use-install-prompt";
 
 function isIosDevice() {
@@ -9,10 +10,17 @@ function isIosDevice() {
 
 export function InstallAppBanner() {
   const { canInstall, installed, promptInstall } = useInstallPrompt();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [dismissed, setDismissed] = useState(false);
   const [showIosHelp, setShowIosHelp] = useState(false);
   const [ready, setReady] = useState(false);
   const isIos = isIosDevice();
+  const isAdminPage = pathname === "/admin";
+
+  useEffect(() => {
+    setDismissed(false);
+    setShowIosHelp(false);
+  }, [isAdminPage]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setReady(true), 1200);
@@ -48,11 +56,15 @@ export function InstallAppBanner() {
           <Download className="h-5 w-5" strokeWidth={2.5} aria-hidden="true" />
         </span>
         <div>
-          <p className="font-display text-sm font-semibold">Instale a Group Mobil</p>
+          <p className="font-display text-sm font-semibold">
+            {isAdminPage ? "Instale o painel Admin" : "Instale a Group Mobil"}
+          </p>
           <p className="mt-1 text-xs leading-relaxed text-white/70">
-            {canInstall
-              ? "Aceda mais rápido à sua carteira com a experiência de aplicação."
-              : "Adicione a Group Mobil ao ecrã principal para abrir como uma aplicação."}
+            {isAdminPage
+              ? "Aceda rapidamente ao painel administrativo como uma aplicação."
+              : canInstall
+                ? "Aceda mais rápido à sua carteira com a experiência de aplicação."
+                : "Adicione a Group Mobil ao ecrã principal para abrir como uma aplicação."}
           </p>
         </div>
       </div>
