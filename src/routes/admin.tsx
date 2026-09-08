@@ -747,6 +747,8 @@ function PlanForm({
   const [description, setDescription] = useState("");
   const [entryPrice, setEntryPrice] = useState("");
   const [estimatedReturn, setEstimatedReturn] = useState("");
+  const [durationValue, setDurationValue] = useState("3");
+  const [durationUnit, setDurationUnit] = useState("meses");
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -757,9 +759,11 @@ function PlanForm({
     setError(null);
     const entry = Number(entryPrice);
     const estimated = Number(estimatedReturn);
+    const duration = Number(durationValue);
     if (!name.trim()) return setError("Digite o nome do plano.");
     if (!entry || entry < 0) return setError("Digite um preço de entrada válido.");
     if (!estimated || estimated < 0) return setError("Digite o retorno estimado.");
+    if (!duration || duration < 1) return setError("Digite a duração do plano.");
     if (!description.trim()) return setError("Digite a descrição do plano.");
 
     setBusy(true);
@@ -768,6 +772,8 @@ function PlanForm({
       description: description.trim(),
       entry_price: entry,
       estimated_return: estimated,
+      duration_value: duration,
+      duration_unit: durationUnit,
       image,
     });
     setBusy(false);
@@ -844,6 +850,35 @@ function PlanForm({
         </label>
       </div>
 
+      <div className="grid grid-cols-2 gap-3">
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-medium text-muted-foreground">
+            Duração do plano
+          </span>
+          <input
+            type="number"
+            min="1"
+            value={durationValue}
+            onChange={(event) => setDurationValue(event.target.value)}
+            placeholder="3"
+            className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm outline-none focus:border-brand-green"
+            required
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-xs font-medium text-muted-foreground">Unidade</span>
+          <select
+            value={durationUnit}
+            onChange={(event) => setDurationUnit(event.target.value)}
+            className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm outline-none focus:border-brand-green"
+          >
+            <option value="dias">Dias</option>
+            <option value="meses">Meses</option>
+            <option value="anos">Anos</option>
+          </select>
+        </label>
+      </div>
+
       <label className="block">
         <span className="mb-1.5 block text-xs font-medium text-muted-foreground">Descrição</span>
         <textarea
@@ -915,6 +950,9 @@ function AdminPlanRow({ plan }: { plan: InvestmentPlan }) {
         <p className="truncate text-sm font-semibold text-card-foreground">{plan.name}</p>
         <p className="mt-0.5 text-xs text-muted-foreground">
           Entrada: {formatKz(Number(plan.entry_price))}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Duração: {plan.duration_value} {plan.duration_unit}
         </p>
         <p className="text-xs font-semibold text-brand-green-dark">
           Retorno: {formatKz(Number(plan.estimated_return))}

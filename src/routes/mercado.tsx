@@ -106,6 +106,9 @@ function MarketPlanCard({
             </p>
           </div>
         </div>
+        <p className="mt-3 text-xs font-medium text-muted-foreground">
+          Duração: {plan.duration_value} {plan.duration_unit}
+        </p>
 
         <button
           type="button"
@@ -167,6 +170,12 @@ function InvestDialog({ plan, onClose }: { plan: InvestmentPlan; onClose: () => 
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Retorno estimado</span>
                   <strong className="text-brand-green-dark">{formatKz(Number(plan.estimated_return))}</strong>
+                </div>
+                <div className="mt-2 flex justify-between text-sm">
+                  <span className="text-muted-foreground">Duração</span>
+                  <strong className="text-card-foreground">
+                    {plan.duration_value} {plan.duration_unit}
+                  </strong>
                 </div>
               </div>
               <button

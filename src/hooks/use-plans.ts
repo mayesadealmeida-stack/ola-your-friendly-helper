@@ -55,6 +55,8 @@ export function usePlans(includeInactive = false) {
         const payload: TablesInsert<"investment_plans"> = {
           name: values.name,
           description: values.description ?? "",
+          duration_value: Number(values.duration_value),
+          duration_unit: values.duration_unit,
           entry_price: Number(values.entry_price),
           estimated_return: Number(values.estimated_return),
           image_url: imageUrl,
