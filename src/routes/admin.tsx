@@ -267,6 +267,50 @@ function AdminPage() {
             </div>
           </nav>
 
+          {!finance.loading &&
+            (finance.summary.n_depositos_pendentes > 0 ||
+              finance.summary.n_saques_pendentes > 0) && (
+              <section
+                aria-live="polite"
+                className="rounded-2xl border border-red-200 bg-red-50 p-4 shadow-sm"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-red-600 text-white">
+                    <AlertTriangle className="h-4.5 w-4.5" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-red-900">Atenção: há movimentos por tratar</p>
+                    <p className="mt-0.5 text-xs leading-relaxed text-red-800/75">
+                      Verifique os depósitos e levantamentos pendentes para dar seguimento.
+                    </p>
+                  </div>
+                  <span className="flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-red-600 px-2 text-[10px] font-bold text-white">
+                    {finance.summary.n_depositos_pendentes + finance.summary.n_saques_pendentes}
+                  </span>
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {finance.summary.n_depositos_pendentes > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setTab("pagamentos")}
+                      className="rounded-xl bg-red-600 px-3 py-2.5 text-xs font-bold text-white transition hover:bg-red-700"
+                    >
+                      Depósitos ({finance.summary.n_depositos_pendentes})
+                    </button>
+                  )}
+                  {finance.summary.n_saques_pendentes > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setTab("saques")}
+                      className="rounded-xl bg-red-600 px-3 py-2.5 text-xs font-bold text-white transition hover:bg-red-700"
+                    >
+                      Saques ({finance.summary.n_saques_pendentes})
+                    </button>
+                  )}
+                </div>
+              </section>
+            )}
+
           {finance.loading ? (
             <div className="flex justify-center py-14">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-hidden="true" />

@@ -192,6 +192,7 @@ export function useAdminFinance(enabled: boolean) {
     queryFn: fetchAdminData,
     enabled,
     staleTime: 15 * 1000,
+    refetchInterval: enabled ? 15 * 1000 : false,
   });
 
   const refresh = useCallback(
